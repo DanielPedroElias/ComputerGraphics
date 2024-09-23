@@ -25,4 +25,5 @@ pip install numpy==1.23
 
 # Actual State
 
-![Captura de tela 2024-09-23 12:33:54](https://github.com/user-attachments/assets/5f82de14-b2f0-4b78-b7a0-e32d2b2d7211)
+![image](https://github.com/user-attachments/assets/c953bf7f-c565-4c09-a8ca-0ea6a0e8c011)
+
