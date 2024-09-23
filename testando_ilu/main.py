@@ -63,7 +63,7 @@ def display():
     glPopMatrix()
 
     # Desenha o cubo
-    desenhar_cubo(posCubeX, posCubeY, cube)
+    desenhar_cubo(posCubeX, posCubeY, caixa)
     desenhar_cubo(posCubeX + 14, posCubeY + 7, cube)
     desenhaCubes(posCubeX + 10, posCubeY, 5)
 
@@ -307,6 +307,7 @@ init()
 mario = pywavefront.Wavefront("mario.obj")
 cube = pywavefront.Wavefront("cube.obj")
 chao = pywavefront.Wavefront("chao.obj")
+caixa = pywavefront.Wavefront("caixaInterrogacao.obj")
 
 # inicia a mudica de fundo
 pygame.mixer.init()
