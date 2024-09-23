@@ -4,6 +4,7 @@ from OpenGL.GLUT import *
 import pywavefront
 from pywavefront import visualization
 import numpy as np
+import pygame
 
 
 from OpenGL.arrays import vbo
@@ -250,9 +251,9 @@ def KeysEspecial(key, x, y):
         L -= 1 
     elif(key == GLUT_KEY_RIGHT ): 
         L += 1 
-    elif(key == GLUT_KEY_UP ): 
-        L2 -= 1
     elif(key == GLUT_KEY_DOWN ): 
+        L2 -= 1
+    elif(key == GLUT_KEY_UP ): 
         L2 += 1 
     elif(key == GLUT_KEY_PAGE_UP ): 
         L3 -= 1 
@@ -306,7 +307,7 @@ def animacao(value):
 def init():
     glClearColor (0.3, 0.3, 0.3, 0.0) # cor de fundo
     glShadeModel( GL_SMOOTH ) # tipo de sombreamento
-    glClearColor( 0.3, 0.3, 0.6, 1.0 ) # cor de fundo
+    glClearColor( 0.0, 0.0, 0.0, 1.0 ) # cor de fundo
     glClearDepth( 1.0 ) # valor do z-buffer
     glEnable( GL_DEPTH_TEST ) # ativa o z-buffer
     glDepthFunc( GL_LEQUAL ) # tipo de teste do z-buffer
@@ -358,6 +359,11 @@ init()
 mario = pywavefront.Wavefront("mario.obj")
 cube = pywavefront.Wavefront("cube.obj")
 chao = pywavefront.Wavefront("chao.obj")
+
+# inicia a mudica de fundo
+pygame.mixer.init()
+pygame.mixer.music.load('Super Mario Bros. Soundtrack.mp3')
+pygame.mixer.music.play(-1)
 
 glutDisplayFunc(display)
 glutReshapeFunc(resize)
