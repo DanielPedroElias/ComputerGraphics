@@ -278,13 +278,16 @@ def animacao(value):
         if T2 < posCubeY+1:
             T2 = posCubeY+1
             pulo = 1
+    elif ( T > posCubeX+12 and T < posCubeX+16) and T2 >= posCubeY+7:
+        if T2 < posCubeY+8:
+            T2 = posCubeY+8
+            pulo = 1
     elif (T > posCubeX+8 and T < posCubeX+20) and T2 >= posCubeY:
         if T2 < posCubeY+1:
             T2 = posCubeY+1
             pulo = 1
     else:
         pulo = 0
-    print(T)
 
 
     #implementa gravidade
