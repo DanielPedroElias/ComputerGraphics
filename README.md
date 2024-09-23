@@ -5,6 +5,8 @@
 
 # Dependencies for using the algorithms in Linux
 
+pip install pygame
+
 # Interface for creating 2D/3D graphics using OpenGL.
 pip install PyOpenGL
 
