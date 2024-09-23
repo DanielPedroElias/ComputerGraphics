@@ -51,14 +51,10 @@ def display():
                 camx,camy, 0.0, # center ponto para o qual a camera aponta
                 0.0, 1.0, 0.0) # up vetor que indica a orientacao da camera
 
-    glPushMatrix()
-
-    #Ações em todo o carro
-    glTranslatef(T, T2, T3)
-    # Escala do carro
-    glScalef(0.5, 0.5, 0.5)  #glScalef(tamanho_x, tamanho_y, tamanho_z)
-
-    glPushMatrix()
+     # Desenha o carro
+    glPushMatrix()  # Salva a matriz atual
+    glTranslatef(T, T2, T3)  # Translação do carro
+    glScalef(0.5, 0.5, 0.5)  # Escala do carro
       
     glUseProgram(carro_shader)
 
@@ -78,22 +74,29 @@ def display():
     # * é usado para "desempacotar" a tupla, ou seja, ele separa os elementos da tupla e os passa como argumentos individuais para a função
     
     
-    obj_draw_shader(carro)
-    
-    glPopMatrix()
+    obj_draw_shader(carro)  # Desenha o carro
+    glPopMatrix()  # Restaura a matriz antes do carro
 
-    
+    # Desenha a plataforma
+    glPushMatrix()  # Salva a matriz atual para a plataforma
+    glTranslatef(0, 0, 0)  # Posição fixa da plataforma, ajuste conforme necessário
+    glScalef(0.1, 0.1, 0.1)  # Escala da plataforma
+    glUseProgram(carro_shader)  # Usar o shader para a plataforma
 
-    glDisableClientState(GL_VERTEX_ARRAY) # desabilita o uso de arrays de vertices
-    glDisableClientState(GL_NORMAL_ARRAY) # desabilita o uso de arrays de normais
+    corPlata = (1, 1, 1, 1)  # Cor da plataforma (branco)
+    # Configurações de materiais para a plataforma
+    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
+    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corPlata)  # Material difuso
+    glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
+    glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
 
-    glPopMatrix()
+    obj_draw_shader(plataforma)  # Desenha a plataforma
+    glPopMatrix()  # Restaura a matriz antes da plataforma
 
+    glUseProgram(0)  # Desativa o shader
 
-    glUseProgram(0)
-    
-    glPushMatrix()
     # deseha a esfera
+    glPushMatrix()
     glTranslatef(L, L2, L3) # translada a esfera
     glColor4f(*light_color)  # Define a cor da esfera como a cor da luz
     glutSolidSphere(0.8, 16, 8) # desenha a esfera glutSolidSphere(raio, slices, stacks)
@@ -240,6 +243,7 @@ wind = glutCreateWindow("Cubo")
 
 init()
 carro = pywavefront.Wavefront("disco.obj")
+plataforma = pywavefront.Wavefront("caixa.obj")
 glutDisplayFunc(display)
 glutReshapeFunc(resize)
 glutTimerFunc(30,animacao,1)
