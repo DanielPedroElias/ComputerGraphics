@@ -15,7 +15,10 @@ T3 = 1 # mov no eixo z
 
 L, L2, L3 = -5.0, 10.0, 0.0
 
-posChao = -10
+pulo = 0
+
+posChaoX = -10
+posPlataX = 7
 
 camx, camy, camz = 0.0, 5.0, 20.0 # posicao da camera
 
@@ -81,7 +84,7 @@ def display():
 
     # Desenha a plataforma
     glPushMatrix()  # Salva a matriz atual para a plataforma
-    glTranslatef(5, 5, 0)  # Posição fixa da plataforma, ajuste conforme necessário
+    glTranslatef(posPlataX, 4, 0)  # Posição fixa da plataforma, ajuste conforme necessário
     glScalef(0.1, 0.1, 0.1)  # Escala da plataforma
     glUseProgram(main_shader)  # Usar o shader para a plataforma
 
@@ -97,7 +100,7 @@ def display():
 
     # Desenha a plataforma
     glPushMatrix()  # Salva a matriz atual para a plataforma
-    glTranslatef(-5, 5, 0)  # Posição fixa da plataforma, ajuste conforme necessário
+    glTranslatef(posPlataX-15, 1, 0)  # Posição fixa da plataforma, ajuste conforme necessário
     glScalef(0.1, 0.1, 0.1)  # Escala da plataforma
     glUseProgram(main_shader)  # Usar o shader para a plataforma
 
@@ -113,7 +116,7 @@ def display():
 
     # Desenha o chão
     glPushMatrix()  # Salva a matriz atual para o chão
-    glTranslatef(posChao, -1, 0)  # Posição fixa do chão, ajuste conforme necessário
+    glTranslatef(posChaoX, -1, 0)  # Posição fixa do chão, ajuste conforme necessário
     # glScalef(0.1, 0.1, 0.1)  # Escala do chão
     glUseProgram(main_shader)  # Usar o shader para o chão
 
@@ -126,8 +129,21 @@ def display():
     glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
 
     obj_draw_shader(chao)  # Desenha o chão
+    glPopMatrix()  # Restaura a matriz antes do chão
 
-    glTranslatef(posChao+45, 0, 0)  # Posição fixa do chão, ajuste conforme necessário
+    
+
+    glPushMatrix()  # Salva a matriz atual para o chão
+    glTranslatef(posChaoX+35, -1, 0)  # Posição fixa do chão, ajuste conforme necessário
+
+    # cor marom do chao
+    corChao = (0.5, 0.5, 0.5, 1)  # Cor do chão (marrom)
+    # Configurações de materiais para o chão
+    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
+    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corChao)  # Material difuso
+    glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
+    glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
+
     obj_draw_shader(chao)  # Desenha o chão
 
     glPopMatrix()  # Restaura a matriz antes do chão
@@ -189,14 +205,16 @@ def Keys(key, x, y):
 
     global T
     global T2
-    global T3
+    global T3, pulo
     
     if(key == b'a'): 
         T -= 1
     elif(key == b'd'): 
         T += 1
-    elif(key == b'w') and T2 <= 1: 
-        T2 += 5
+    elif((key == b'w') and T2 <= 1) or pulo == 1: 
+        T2 += 7
+        if pulo == 1:
+            pulo = 0
     elif(key == b's'): 
         T2 -= 1
     elif(key == b'q'): 
@@ -228,15 +246,21 @@ def animacao(value):
     
     #colisao do chao
     # chao tem tamanho = 30
-    global T, T2, T3
-    global posChao
+    global T, T2, T3, pulo
+    global posChaoX
 
-    if T > posChao -16 and T < posChao + 16:
+    if T > posChaoX -16 and T < posChaoX + 16:
         if T2 < 0:
             T2 = 0
-    elif T > posChao -16 + 35 and T < posChao +16 + 35:
+    elif T > posChaoX -16 + 35 and T < posChaoX +16 + 35:
         if T2 < 0:
             T2 = 0
+    if (T > posPlataX -4 and T < posPlataX + 3) and T2 >=6:
+        if T2 < 7:
+            T2 = 7
+            pulo = 1
+    else:
+        pulo = 0
 
     #implementa gravidade
     if T2 > -3:
