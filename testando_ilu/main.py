@@ -15,6 +15,8 @@ T3 = 1 # mov no eixo z
 
 L, L2, L3 = -5.0, 10.0, 0.0
 
+posChao = -10
+
 camx, camy, camz = 0.0, 5.0, 20.0 # posicao da camera
 
 # Variáveis para o shader
@@ -51,12 +53,12 @@ def display():
                 camx,camy, 0.0, # center ponto para o qual a camera aponta
                 0.0, 1.0, 0.0) # up vetor que indica a orientacao da camera
 
-     # Desenha o carro
+     # Desenha o main
     glPushMatrix()  # Salva a matriz atual
-    glTranslatef(T, T2, T3)  # Translação do carro
-    glScalef(0.5, 0.5, 0.5)  # Escala do carro
+    glTranslatef(T, T2, T3)  # Translação do main
+    glScalef(0.5, 0.5, 0.5)  # Escala do disco
       
-    glUseProgram(carro_shader)
+    glUseProgram(main_shader)
 
 
     corObj = (0.5, 0.0, 0.0, 1) # cor do objeto (branco)
@@ -74,14 +76,14 @@ def display():
     # * é usado para "desempacotar" a tupla, ou seja, ele separa os elementos da tupla e os passa como argumentos individuais para a função
     
     
-    obj_draw_shader(carro)  # Desenha o carro
-    glPopMatrix()  # Restaura a matriz antes do carro
+    obj_draw_shader(disco)  # Desenha o disco
+    glPopMatrix()  # Restaura a matriz antes do disco
 
     # Desenha a plataforma
     glPushMatrix()  # Salva a matriz atual para a plataforma
-    glTranslatef(0, 0, 0)  # Posição fixa da plataforma, ajuste conforme necessário
+    glTranslatef(5, 5, 0)  # Posição fixa da plataforma, ajuste conforme necessário
     glScalef(0.1, 0.1, 0.1)  # Escala da plataforma
-    glUseProgram(carro_shader)  # Usar o shader para a plataforma
+    glUseProgram(main_shader)  # Usar o shader para a plataforma
 
     corPlata = (1, 1, 1, 1)  # Cor da plataforma (branco)
     # Configurações de materiais para a plataforma
@@ -93,7 +95,45 @@ def display():
     obj_draw_shader(plataforma)  # Desenha a plataforma
     glPopMatrix()  # Restaura a matriz antes da plataforma
 
+    # Desenha a plataforma
+    glPushMatrix()  # Salva a matriz atual para a plataforma
+    glTranslatef(-5, 5, 0)  # Posição fixa da plataforma, ajuste conforme necessário
+    glScalef(0.1, 0.1, 0.1)  # Escala da plataforma
+    glUseProgram(main_shader)  # Usar o shader para a plataforma
+
+    corPlata = (1, 1, 1, 1)  # Cor da plataforma (branco)
+    # Configurações de materiais para a plataforma
+    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
+    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corPlata)  # Material difuso
+    glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
+    glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
+
+    obj_draw_shader(caixa2)  # Desenha a plataforma
+    glPopMatrix()  # Restaura a matriz antes da plataforma
+
+    # Desenha o chão
+    glPushMatrix()  # Salva a matriz atual para o chão
+    glTranslatef(posChao, -1, 0)  # Posição fixa do chão, ajuste conforme necessário
+    # glScalef(0.1, 0.1, 0.1)  # Escala do chão
+    glUseProgram(main_shader)  # Usar o shader para o chão
+
+    # cor marom do chao
+    corChao = (0.5, 0.5, 0.5, 1)  # Cor do chão (marrom)
+    # Configurações de materiais para o chão
+    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
+    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corChao)  # Material difuso
+    glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
+    glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
+
+    obj_draw_shader(chao)  # Desenha o chão
+
+    glTranslatef(posChao+45, 0, 0)  # Posição fixa do chão, ajuste conforme necessário
+    obj_draw_shader(chao)  # Desenha o chão
+
+    glPopMatrix()  # Restaura a matriz antes do chão
+
     glUseProgram(0)  # Desativa o shader
+
 
     # deseha a esfera
     glPushMatrix()
@@ -155,8 +195,8 @@ def Keys(key, x, y):
         T -= 1
     elif(key == b'd'): 
         T += 1
-    elif(key == b'w'): 
-        T2 += 1
+    elif(key == b'w') and T2 <= 1: 
+        T2 += 5
     elif(key == b's'): 
         T2 -= 1
     elif(key == b'q'): 
@@ -186,7 +226,27 @@ def animacao(value):
     glutPostRedisplay()
     glutTimerFunc(30, animacao,1)
     
+    #colisao do chao
+    # chao tem tamanho = 30
+    global T, T2, T3
+    global posChao
+
+    if T > posChao -16 and T < posChao + 16:
+        if T2 < 0:
+            T2 = 0
+    elif T > posChao -16 + 35 and T < posChao +16 + 35:
+        if T2 < 0:
+            T2 = 0
+
+    #implementa gravidade
+    if T2 > -3:
+        T2 -= 0.1
+
+    if T2 <= -3: 
+        print("you died")
     
+    
+
 
 
   
@@ -203,34 +263,34 @@ def init():
     glDepthFunc( GL_LEQUAL )
     glEnable( GL_DEPTH_TEST )
     
-    vertexShader = shaders.compileShader(open('carro.vert', 'r').read(), GL_VERTEX_SHADER)
-    fragmentShader = shaders.compileShader(open('carro.frag', 'r').read(), GL_FRAGMENT_SHADER)
+    vertexShader = shaders.compileShader(open('main.vert', 'r').read(), GL_VERTEX_SHADER)
+    fragmentShader = shaders.compileShader(open('main.frag', 'r').read(), GL_FRAGMENT_SHADER)
 
-    global carro_shader
-    carro_shader = glCreateProgram()
-    glAttachShader(carro_shader, vertexShader) 
-    glAttachShader(carro_shader, fragmentShader)
-    glLinkProgram(carro_shader)
+    global main_shader
+    main_shader = glCreateProgram()
+    glAttachShader(main_shader, vertexShader) 
+    glAttachShader(main_shader, fragmentShader)
+    glLinkProgram(main_shader)
     
     global LIGTH_LOCATIONS
     LIGTH_LOCATIONS = {
-        'Global_ambient': glGetUniformLocation( carro_shader, 'Global_ambient' ),
-        'Light_ambient': glGetUniformLocation( carro_shader, 'Light_ambient' ),
-        'Light_diffuse': glGetUniformLocation( carro_shader, 'Light_diffuse' ),
-        'Light_location': glGetUniformLocation( carro_shader, 'Light_location' ),
-        'Light_specular': glGetUniformLocation( carro_shader, 'Light_specular' ),
-        'Material_ambient': glGetUniformLocation( carro_shader, 'Material_ambient' ),
-        'Material_diffuse': glGetUniformLocation( carro_shader, 'Material_diffuse' ),
-        'Material_shininess': glGetUniformLocation( carro_shader, 'Material_shininess' ),
-        'Material_specular': glGetUniformLocation( carro_shader, 'Material_specular' ),
-        'Object_color': glGetUniformLocation(carro_shader, 'Object_color')
+        'Global_ambient': glGetUniformLocation( main_shader, 'Global_ambient' ),
+        'Light_ambient': glGetUniformLocation( main_shader, 'Light_ambient' ),
+        'Light_diffuse': glGetUniformLocation( main_shader, 'Light_diffuse' ),
+        'Light_location': glGetUniformLocation( main_shader, 'Light_location' ),
+        'Light_specular': glGetUniformLocation( main_shader, 'Light_specular' ),
+        'Material_ambient': glGetUniformLocation( main_shader, 'Material_ambient' ),
+        'Material_diffuse': glGetUniformLocation( main_shader, 'Material_diffuse' ),
+        'Material_shininess': glGetUniformLocation( main_shader, 'Material_shininess' ),
+        'Material_specular': glGetUniformLocation( main_shader, 'Material_specular' ),
+        'Object_color': glGetUniformLocation(main_shader, 'Object_color')
 
     }   
     
     global ATTR_LOCATIONS
     ATTR_LOCATIONS = {
-        'Vertex_position': glGetAttribLocation( carro_shader, 'Vertex_position' ),
-        'Vertex_normal': glGetAttribLocation( carro_shader, 'Vertex_normal' )
+        'Vertex_position': glGetAttribLocation( main_shader, 'Vertex_position' ),
+        'Vertex_normal': glGetAttribLocation( main_shader, 'Vertex_normal' )
     }
 
     
@@ -242,8 +302,12 @@ glutInitWindowPosition(100, 100)
 wind = glutCreateWindow("Cubo")
 
 init()
-carro = pywavefront.Wavefront("disco.obj")
+
+disco = pywavefront.Wavefront("disco.obj")
 plataforma = pywavefront.Wavefront("caixa.obj")
+caixa2 = pywavefront.Wavefront("caixa2.obj")
+chao = pywavefront.Wavefront("chao.obj")
+
 glutDisplayFunc(display)
 glutReshapeFunc(resize)
 glutTimerFunc(30,animacao,1)
