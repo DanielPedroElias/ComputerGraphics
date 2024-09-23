@@ -159,7 +159,7 @@ def display():
     glPopMatrix() # finaliza a esfera
 
  
-    #Eixos
+    #Eixos do sistema de coordenadas
     # eixo x cor vermelha
     glBegin(GL_LINES)
     glColor3f(1.0, 0.0, 0.0)
