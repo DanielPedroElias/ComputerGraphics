@@ -254,7 +254,8 @@ def animacao(value):
 def init():
     glClearColor (0.3, 0.3, 0.3, 0.0) # cor de fundo
     glShadeModel( GL_SMOOTH ) # tipo de sombreamento
-    glClearColor( 0.0, 0.0, 0.0, 1.0 ) # cor de fundo
+    glClearColor( 0.13, 0.41, 0.58, 1.0 ) # cor de fundo
+    
     glClearDepth( 1.0 ) # valor do z-buffer
     glEnable( GL_DEPTH_TEST ) # ativa o z-buffer
     glDepthFunc( GL_LEQUAL ) # tipo de teste do z-buffer
