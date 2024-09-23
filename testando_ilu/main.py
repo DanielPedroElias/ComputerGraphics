@@ -47,6 +47,7 @@ def display():
         camx -= 1
     gluLookAt(camx, camy, camz, camx, camy, 0.0, 0.0, 1.0, 0.0)
 
+
     # Desenha o personagem principal (Mario)
     glPushMatrix()
     glTranslatef(T, T2, T3)
@@ -54,8 +55,9 @@ def display():
     glUseProgram(main_shader)
 
     corObj = (0.5, 0.0, 0.0, 1)  # Cor do objeto
+    corLuz = (1.0, 1.0, 1.0, 1.0)  # Cor da luz
     configurar_material(corObj)
-    configurar_luz(L, L2, L3, (1.0, 1.0, 0.0, 1.0))
+    configurar_luz(L, L2, L3,corLuz)
 
     obj_draw_shader(mario)
     glPopMatrix()
@@ -70,7 +72,7 @@ def display():
     desenhar_chao(posChaoX + 35, chao)
 
     # Desenha a esfera de luz
-    desenhar_esfera(L, L2, L3, (1.0, 1.0, 0.0, 1.0))
+    desenhar_esfera(L, L2, L3, corLuz)
 
     glUseProgram(0)
 
@@ -79,12 +81,14 @@ def display():
 
     glutSwapBuffers()
 
+
+
 # Função para desenhar os cubos
 def desenhar_cubo(posx, posy, objeto):
     glPushMatrix()
     glTranslatef(posx, posy, 0)
     glUseProgram(main_shader)
-    corCube = (1, 1, 1, 1)
+    corCube = (1, 1, 0, 1)
     configurar_material(corCube)
     obj_draw_shader(objeto)
     glPopMatrix()
@@ -94,7 +98,7 @@ def desenhar_chao(posx, objeto):
     glPushMatrix()
     glTranslatef(posx, -1, 0)
     glUseProgram(main_shader)
-    corChao = (0.5, 0.5, 0.5, 1)
+    corChao = (0.5, .3, 0.1, 1)
     configurar_material(corChao)
     obj_draw_shader(objeto)
     glPopMatrix()
@@ -103,9 +107,12 @@ def desenhar_chao(posx, objeto):
 def desenhar_esfera(L, L2, L3, light_color):
     glPushMatrix()
     glTranslatef(L, L2, L3)
-    glColor4f(*light_color)
+    glUseProgram(main_shader)  # Use o shader para a esfera
+    corEsfera = light_color # Mudar a cor da esfera para vermelho
+    configurar_material(corEsfera)  # Configurar material da esfera
     glutSolidSphere(0.8, 16, 8)
     glPopMatrix()
+
 
 # Função para desenhar os eixos de coordenadas
 def desenhar_eixos():
