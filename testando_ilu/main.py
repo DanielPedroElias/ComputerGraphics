@@ -13,14 +13,16 @@ T = 1 # mov no eixo x
 T2 = 1 # mov no eixo y
 T3 = 1 # mov no eixo z
 
-L, L2, L3 = -5.0, 10.0, 0.0
+L, L2, L3 = 0.0, 20.0, 0.0
 
 pulo = 0
 
-posChaoX = -10
-posPlataX = 7
+posChaoX = -5
 
-camx, camy, camz = 0.0, 5.0, 20.0 # posicao da camera
+posCubeX = -5
+posCubeY = 7
+
+camx, camy, camz = 0.0, 10.0, 30.0 # posicao da camera
 
 # Variáveis para o shader
 def obj_draw_shader(objeto):
@@ -59,7 +61,7 @@ def display():
      # Desenha o main
     glPushMatrix()  # Salva a matriz atual
     glTranslatef(T, T2, T3)  # Translação do main
-    glScalef(0.5, 0.5, 0.5)  # Escala do disco
+    glScalef(0.5, 0.5, 0.5)  # Escala do mario
       
     glUseProgram(main_shader)
 
@@ -79,40 +81,42 @@ def display():
     # * é usado para "desempacotar" a tupla, ou seja, ele separa os elementos da tupla e os passa como argumentos individuais para a função
     
     
-    obj_draw_shader(disco)  # Desenha o disco
-    glPopMatrix()  # Restaura a matriz antes do disco
+    obj_draw_shader(mario)  # Desenha o mario
+    glPopMatrix()  # Restaura a matriz antes do mario
 
-    # Desenha a plataforma
-    glPushMatrix()  # Salva a matriz atual para a plataforma
-    glTranslatef(posPlataX, 4, 0)  # Posição fixa da plataforma, ajuste conforme necessário
-    glScalef(0.1, 0.1, 0.1)  # Escala da plataforma
-    glUseProgram(main_shader)  # Usar o shader para a plataforma
+    # Desenha a cube
+    glPushMatrix()  # Salva a matriz atual para a cube
+    glTranslatef(posCubeX, posCubeY, 0)  # Posição fixa da cube, ajuste conforme necessário
+   #glScalef(0.1, 0.1, 0.1)  # Escala da cube
+    glUseProgram(main_shader)  # Usar o shader para a cube
 
-    corPlata = (1, 1, 1, 1)  # Cor da plataforma (branco)
-    # Configurações de materiais para a plataforma
+    corCube = (1, 1, 1, 1)  # Cor da cube (branco)
+    # Configurações de materiais para a cube
     glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
-    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corPlata)  # Material difuso
+    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corCube)  # Material difuso
     glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
     glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
 
-    obj_draw_shader(plataforma)  # Desenha a plataforma
-    glPopMatrix()  # Restaura a matriz antes da plataforma
+    obj_draw_shader(cube)  # Desenha a cube
+    glPopMatrix()  # Restaura a matriz antes da cube
 
-    # Desenha a plataforma
-    glPushMatrix()  # Salva a matriz atual para a plataforma
-    glTranslatef(posPlataX-15, 1, 0)  # Posição fixa da plataforma, ajuste conforme necessário
-    glScalef(0.1, 0.1, 0.1)  # Escala da plataforma
-    glUseProgram(main_shader)  # Usar o shader para a plataforma
+    # Desenha a cube
+    glPushMatrix()  # Salva a matriz atual para a cube
+    glTranslatef(posCubeX + 14 , posCubeY + 7, 0)  # Posição fixa da cube, ajuste conforme necessário
+   #glScalef(0.1, 0.1, 0.1)  # Escala da cube
+    glUseProgram(main_shader)  # Usar o shader para a cube
 
-    corPlata = (1, 1, 1, 1)  # Cor da plataforma (branco)
-    # Configurações de materiais para a plataforma
+    corCube = (1, 1, 1, 1)  # Cor da cube (branco)
+    # Configurações de materiais para a cube
     glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
-    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corPlata)  # Material difuso
+    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corCube)  # Material difuso
     glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
     glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
 
-    obj_draw_shader(caixa2)  # Desenha a plataforma
-    glPopMatrix()  # Restaura a matriz antes da plataforma
+    obj_draw_shader(cube)  # Desenha a cube
+    glPopMatrix()  # Restaura a matriz antes da cube
+
+    desenhaCubes(posCubeX+10, posCubeY, 5)
 
     # Desenha o chão
     glPushMatrix()  # Salva a matriz atual para o chão
@@ -130,8 +134,6 @@ def display():
 
     obj_draw_shader(chao)  # Desenha o chão
     glPopMatrix()  # Restaura a matriz antes do chão
-
-    
 
     glPushMatrix()  # Salva a matriz atual para o chão
     glTranslatef(posChaoX+35, -1, 0)  # Posição fixa do chão, ajuste conforme necessário
@@ -184,6 +186,23 @@ def display():
 
     glutSwapBuffers()
 
+# Desenha os cubos em linha
+def desenhaCubes(posx, posy, quantidade):
+    for i in range(quantidade):
+        glPushMatrix()  # Salva a matriz de transformação atual
+        glTranslatef(posx + (i+i), posy, 0)  # Translada para a posição do cubo
+        corCube = (1, 1, 1, 1)  # Cor do cubo (branco)
+
+        # Configurações de materiais para o cubo
+        glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
+        glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corCube)  # Material difuso
+        glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
+        glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
+
+        obj_draw_shader(cube)  # Desenha o cubo
+        glPopMatrix()  # Restaura a matriz de transformação anterior
+
+    
 def resize(w, h):
    
     glViewport(0, 0, w, h)
@@ -212,7 +231,7 @@ def Keys(key, x, y):
     elif(key == b'd'): 
         T += 1
     elif((key == b'w') and T2 <= 1) or pulo == 1: 
-        T2 += 7
+        T2 += 8
         if pulo == 1:
             pulo = 0
     elif(key == b's'): 
@@ -247,7 +266,7 @@ def animacao(value):
     #colisao do chao
     # chao tem tamanho = 30
     global T, T2, T3, pulo
-    global posChaoX
+    global posChaoX, posCubeY
 
     if T > posChaoX -16 and T < posChaoX + 16:
         if T2 < 0:
@@ -255,12 +274,18 @@ def animacao(value):
     elif T > posChaoX -16 + 35 and T < posChaoX +16 + 35:
         if T2 < 0:
             T2 = 0
-    if (T > posPlataX -4 and T < posPlataX + 3) and T2 >=6:
-        if T2 < 7:
-            T2 = 7
+    if (T > posCubeX -2 and T < posCubeX + 2) and T2 >= posCubeY:
+        if T2 < posCubeY+1:
+            T2 = posCubeY+1
+            pulo = 1
+    elif (T > posCubeX+8 and T < posCubeX+20) and T2 >= posCubeY:
+        if T2 < posCubeY+1:
+            T2 = posCubeY+1
             pulo = 1
     else:
         pulo = 0
+    print(T)
+
 
     #implementa gravidade
     if T2 > -3:
@@ -278,7 +303,7 @@ def animacao(value):
 def init():
     glClearColor (0.3, 0.3, 0.3, 0.0) # cor de fundo
     glShadeModel( GL_SMOOTH ) # tipo de sombreamento
-    glClearColor( 0.0, 0.0, 0.0, 1.0 ) # cor de fundo
+    glClearColor( 0.3, 0.3, 0.6, 1.0 ) # cor de fundo
     glClearDepth( 1.0 ) # valor do z-buffer
     glEnable( GL_DEPTH_TEST ) # ativa o z-buffer
     glDepthFunc( GL_LEQUAL ) # tipo de teste do z-buffer
@@ -327,9 +352,8 @@ wind = glutCreateWindow("Cubo")
 
 init()
 
-disco = pywavefront.Wavefront("disco.obj")
-plataforma = pywavefront.Wavefront("caixa.obj")
-caixa2 = pywavefront.Wavefront("caixa2.obj")
+mario = pywavefront.Wavefront("mario.obj")
+cube = pywavefront.Wavefront("cube.obj")
 chao = pywavefront.Wavefront("chao.obj")
 
 glutDisplayFunc(display)
