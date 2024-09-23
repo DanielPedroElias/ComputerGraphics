@@ -25,5 +25,5 @@ pip install numpy==1.23
 
 # Actual State
 
-![image](https://github.com/user-attachments/assets/9bd97f3b-b1ee-4f3e-b3e6-c950956a1855)
+![image](https://github.com/user-attachments/assets/d32209d3-9f6c-487a-9575-c05cbabcc5d5)
 
