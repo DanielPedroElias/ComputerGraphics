@@ -5,219 +5,159 @@ import pywavefront
 from pywavefront import visualization
 import numpy as np
 import pygame
-
-
 from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
 
-T = 1 # mov no eixo x
-T2 = 1 # mov no eixo y
-T3 = 1 # mov no eixo z
-
-L, L2, L3 = 0.0, 20.0, 0.0
-
+# Variáveis de movimentação e posição
+T, T2, T3 = 1, 1, 1  # Movimentação nos eixos X, Y e Z
+L, L2, L3 = 0.0, 20.0, 0.0  # Posição da luz
 pulo = 0
-
 posChaoX = -5
+posCubeX, posCubeY = -5, 7
+camx, camy, camz = 0.0, 10.0, 30.0  # Posição da câmera
 
-posCubeX = -5
-posCubeY = 7
-
-camx, camy, camz = 0.0, 10.0, 30.0 # posicao da camera
-
-# Variáveis para o shader
+# Função para desenhar o objeto utilizando o shader
 def obj_draw_shader(objeto):
-    objs = list(objeto.materials.keys())    #Pega primeiro objeto do .obj
+    objs = list(objeto.materials.keys())
     vertices = objeto.materials[objs[0]].vertices
-    vertices = np.array(vertices, dtype=np.float32).reshape(-1,6)
+    vertices = np.array(vertices, dtype=np.float32).reshape(-1, 6)
     vbo_objeto = vbo.VBO(vertices)
-    
+
     vbo_objeto.bind()
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
-    glVertexPointer(3, GL_FLOAT, 24, vbo_objeto+12)   #glVertexPointer(size, type, stride, pointer)
-    glNormalPointer(GL_FLOAT, 24, vbo_objeto)         #glNormalPointer(type, stride, pointer)
+    glVertexPointer(3, GL_FLOAT, 24, vbo_objeto + 12)
+    glNormalPointer(GL_FLOAT, 24, vbo_objeto)
     glDrawArrays(GL_TRIANGLES, 0, vertices.shape[0])
     vbo_objeto.unbind()
     glDisableClientState(GL_VERTEX_ARRAY)
     glDisableClientState(GL_NORMAL_ARRAY)
 
-
-# Variáveis para o shader
+# Função display para renderização
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    # movimenta a camera
+    # Movimenta a câmera
     global camx, camy, camz
-    if T > camx + 12 :
+    if T > camx + 12:
         camx += 1
     elif T < camx - 12:
         camx -= 1
-    gluLookAt(camx , camy, camz, # eye posicao do olho
-                camx,camy, 0.0, # center ponto para o qual a camera aponta
-                0.0, 1.0, 0.0) # up vetor que indica a orientacao da camera
+    gluLookAt(camx, camy, camz, camx, camy, 0.0, 0.0, 1.0, 0.0)
 
-     # Desenha o main
-    glPushMatrix()  # Salva a matriz atual
-    glTranslatef(T, T2, T3)  # Translação do main
-    glScalef(0.5, 0.5, 0.5)  # Escala do mario
-      
+    # Desenha o personagem principal (Mario)
+    glPushMatrix()
+    glTranslatef(T, T2, T3)
+    glScalef(0.5, 0.5, 0.5)
     glUseProgram(main_shader)
 
+    corObj = (0.5, 0.0, 0.0, 1)  # Cor do objeto
+    configurar_material(corObj)
+    configurar_luz(L, L2, L3, (1.0, 1.0, 0.0, 1.0))
 
-    corObj = (0.5, 0.0, 0.0, 1) # cor do objeto (branco)
-    glUniform4f( LIGTH_LOCATIONS['Material_ambient'], .1,.1,.1, 1.0 ) # material ambiente
-    glUniform4f( LIGTH_LOCATIONS['Material_diffuse'],*corObj ) # material difuso 
-    glUniform4f( LIGTH_LOCATIONS['Material_specular'], 0.9,0.9,0.9, 1) # material especular
-    glUniform1f( LIGTH_LOCATIONS['Material_shininess'], 0.6*128.0 ) # brilho do material
-    
-    glUniform4f( LIGTH_LOCATIONS['Global_ambient'], 0.1, 0.1, 0.1, 1.0 )    #  luz ambiente global 
+    obj_draw_shader(mario)
+    glPopMatrix()
 
-    glUniform3f( LIGTH_LOCATIONS['Light_location'], L, L2, L3 ) # posicao da luz
-    light_color = (1.0, 1.0, 0.0, 1.0) # cor da luz
-    glUniform4f( LIGTH_LOCATIONS['Light_diffuse'], *light_color) # luz difusa
-    glUniform4f( LIGTH_LOCATIONS['Light_specular'], *light_color) # luz especular
-    # * é usado para "desempacotar" a tupla, ou seja, ele separa os elementos da tupla e os passa como argumentos individuais para a função
-    
-    
-    obj_draw_shader(mario)  # Desenha o mario
-    glPopMatrix()  # Restaura a matriz antes do mario
-
-    # Desenha a cube
-    glPushMatrix()  # Salva a matriz atual para a cube
-    glTranslatef(posCubeX, posCubeY, 0)  # Posição fixa da cube, ajuste conforme necessário
-   #glScalef(0.1, 0.1, 0.1)  # Escala da cube
-    glUseProgram(main_shader)  # Usar o shader para a cube
-
-    corCube = (1, 1, 1, 1)  # Cor da cube (branco)
-    # Configurações de materiais para a cube
-    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
-    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corCube)  # Material difuso
-    glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
-    glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
-
-    obj_draw_shader(cube)  # Desenha a cube
-    glPopMatrix()  # Restaura a matriz antes da cube
-
-    # Desenha a cube
-    glPushMatrix()  # Salva a matriz atual para a cube
-    glTranslatef(posCubeX + 14 , posCubeY + 7, 0)  # Posição fixa da cube, ajuste conforme necessário
-   #glScalef(0.1, 0.1, 0.1)  # Escala da cube
-    glUseProgram(main_shader)  # Usar o shader para a cube
-
-    corCube = (1, 1, 1, 1)  # Cor da cube (branco)
-    # Configurações de materiais para a cube
-    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
-    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corCube)  # Material difuso
-    glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
-    glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
-
-    obj_draw_shader(cube)  # Desenha a cube
-    glPopMatrix()  # Restaura a matriz antes da cube
-
-    desenhaCubes(posCubeX+10, posCubeY, 5)
+    # Desenha o cubo
+    desenhar_cubo(posCubeX, posCubeY, cube)
+    desenhar_cubo(posCubeX + 14, posCubeY + 7, cube)
+    desenhaCubes(posCubeX + 10, posCubeY, 5)
 
     # Desenha o chão
-    glPushMatrix()  # Salva a matriz atual para o chão
-    glTranslatef(posChaoX, -1, 0)  # Posição fixa do chão, ajuste conforme necessário
-    # glScalef(0.1, 0.1, 0.1)  # Escala do chão
-    glUseProgram(main_shader)  # Usar o shader para o chão
+    desenhar_chao(posChaoX, chao)
+    desenhar_chao(posChaoX + 35, chao)
 
-    # cor marom do chao
-    corChao = (0.5, 0.5, 0.5, 1)  # Cor do chão (marrom)
-    # Configurações de materiais para o chão
-    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
-    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corChao)  # Material difuso
-    glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
-    glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
+    # Desenha a esfera de luz
+    desenhar_esfera(L, L2, L3, (1.0, 1.0, 0.0, 1.0))
 
-    obj_draw_shader(chao)  # Desenha o chão
-    glPopMatrix()  # Restaura a matriz antes do chão
+    glUseProgram(0)
 
-    glPushMatrix()  # Salva a matriz atual para o chão
-    glTranslatef(posChaoX+35, -1, 0)  # Posição fixa do chão, ajuste conforme necessário
+    # Desenha os eixos de coordenadas
+    desenhar_eixos()
 
-    # cor marom do chao
-    corChao = (0.5, 0.5, 0.5, 1)  # Cor do chão (marrom)
-    # Configurações de materiais para o chão
-    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
-    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corChao)  # Material difuso
-    glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
-    glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
+    glutSwapBuffers()
 
-    obj_draw_shader(chao)  # Desenha o chão
-
-    glPopMatrix()  # Restaura a matriz antes do chão
-
-    glUseProgram(0)  # Desativa o shader
-
-
-    # deseha a esfera
+# Função para desenhar os cubos
+def desenhar_cubo(posx, posy, objeto):
     glPushMatrix()
-    glTranslatef(L, L2, L3) # translada a esfera
-    glColor4f(*light_color)  # Define a cor da esfera como a cor da luz
-    glutSolidSphere(0.8, 16, 8) # desenha a esfera glutSolidSphere(raio, slices, stacks)
-    glPopMatrix() # finaliza a esfera
+    glTranslatef(posx, posy, 0)
+    glUseProgram(main_shader)
+    corCube = (1, 1, 1, 1)
+    configurar_material(corCube)
+    obj_draw_shader(objeto)
+    glPopMatrix()
 
- 
-    #Eixos do sistema de coordenadas
-    # eixo x cor vermelha
+# Função para desenhar o chão
+def desenhar_chao(posx, objeto):
+    glPushMatrix()
+    glTranslatef(posx, -1, 0)
+    glUseProgram(main_shader)
+    corChao = (0.5, 0.5, 0.5, 1)
+    configurar_material(corChao)
+    obj_draw_shader(objeto)
+    glPopMatrix()
+
+# Função para desenhar a esfera representando a luz
+def desenhar_esfera(L, L2, L3, light_color):
+    glPushMatrix()
+    glTranslatef(L, L2, L3)
+    glColor4f(*light_color)
+    glutSolidSphere(0.8, 16, 8)
+    glPopMatrix()
+
+# Função para desenhar os eixos de coordenadas
+def desenhar_eixos():
+    # Eixo X (vermelho)
     glBegin(GL_LINES)
     glColor3f(1.0, 0.0, 0.0)
     glVertex3f(0.0, 0.0, 0.0)
     glVertex3f(20.0, 0.0, 0.0)
     glEnd()
-    # eixo y cor verde
+
+    # Eixo Y (verde)
     glBegin(GL_LINES)
     glColor3f(0.0, 1.0, 0.0)
     glVertex3f(0.0, 0.0, 0.0)
     glVertex3f(0.0, 20.0, 0.0)
     glEnd()
-    # eixo z cor azul
+
+    # Eixo Z (azul)
     glBegin(GL_LINES)
     glColor3f(0.0, 0.0, 1.0)
     glVertex3f(0.0, 0.0, 0.0)
     glVertex3f(0.0, 0.0, 20.0)
     glEnd()
-    
-    
 
+# Função para configurar os materiais (cor, brilho, etc.)
+def configurar_material(cor):
+    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)
+    glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *cor)
+    glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)
+    glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)
 
-    glutSwapBuffers()
+# Função para configurar as luzes
+def configurar_luz(L, L2, L3, light_color):
+    glUniform4f(LIGTH_LOCATIONS['Global_ambient'], 0.1, 0.1, 0.1, 1.0)
+    glUniform3f(LIGTH_LOCATIONS['Light_location'], L, L2, L3)
+    glUniform4f(LIGTH_LOCATIONS['Light_diffuse'], *light_color)
+    glUniform4f(LIGTH_LOCATIONS['Light_specular'], *light_color)
 
-# Desenha os cubos em linha
+# Desenha múltiplos cubos em linha
 def desenhaCubes(posx, posy, quantidade):
     for i in range(quantidade):
-        glPushMatrix()  # Salva a matriz de transformação atual
-        glTranslatef(posx + (i+i), posy, 0)  # Translada para a posição do cubo
-        corCube = (1, 1, 1, 1)  # Cor do cubo (branco)
+        desenhar_cubo(posx + (i + i), posy, cube)
 
-        # Configurações de materiais para o cubo
-        glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)  # Material ambiente
-        glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *corCube)  # Material difuso
-        glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)  # Material especular
-        glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)  # Brilho do material
-
-        obj_draw_shader(cube)  # Desenha o cubo
-        glPopMatrix()  # Restaura a matriz de transformação anterior
-
-    
+# Função para redimensionar a tela
 def resize(w, h):
-   
     glViewport(0, 0, w, h)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(45.0, w/h, 1.0, 100.0)
+    gluPerspective(45, w / h, 0.1, 100.0)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    global camx, camy, camz
-
-    gluLookAt(camx , camy, camz, # eye posicao do olho
-                0.0, 5.0, 0.0, # center ponto para o qual a camera aponta
-                0.0, 1.0, 0.0) # up vetor que indica a orientacao da camera
     
 
 
