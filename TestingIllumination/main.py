@@ -4,13 +4,16 @@ from OpenGL.GLUT import *
 import pywavefront
 from pywavefront import visualization
 import numpy as np
-import pygame
 from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
 
+import pygame
+import cv2
+import sys
+
 # Variáveis de movimentação e posição
 T, T2, T3 = 1, 1, 1  # Movimentação nos eixos X, Y e Z
-L, L2, L3 = 0.0, 20.0, 0.0  # Posição da luz
+L, L2, L3 = 0.0, 10.0, 0.0  # Posição da luz
 
 pulo = False
 
@@ -28,6 +31,8 @@ posCastlex = 85
 posBandeira = 70
 
 camx, camy, camz = 5.0, 10.0, 30.0  # Posição da câmera
+
+controle = 0
 
 # Função para desenhar o objeto utilizando o shader
 def obj_draw_shader(objeto):
@@ -138,9 +143,55 @@ def display():
     # Desenha os eixos de coordenadas
    # desenhar_eixos()
 
+    # colisão com o castelo
+    global controle
+    if (T > posCastlex - 5 and T < posCastlex + 5) and controle == 0:
+            controle = 1
+            play_video("conquista.mp4")  # Chama a função para tocar o vídeo
+            
     glutSwapBuffers()
 
 
+
+def play_video(video_path):
+    # Inicializa o Pygame
+    pygame.init()
+
+        # Configura a janela do Pygame
+    screen = pygame.display.set_mode((720, 720))
+
+    # Carrega o vídeo com OpenCV
+    cap = cv2.VideoCapture(video_path)
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        # Converte de BGR para RGB
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Converte a imagem para superfície do Pygame
+        frame = pygame.surfarray.make_surface(frame)
+
+        # Exibe o frame na janela do Pygame
+        screen.blit(frame, (0, 0))
+        pygame.display.flip()
+
+        # Gerencia eventos do Pygame
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                cap.release()
+                pygame.quit()
+                sys.exit()
+        
+        # Atraso para controlar a taxa de quadros
+        pygame.time.delay(30)
+
+    cap.release()
+    pygame.quit() # Fecha o Pygame
 
 # Função para desenhar os cubos
 def desenhar_cubo(posx, posy, objeto):
@@ -165,7 +216,7 @@ def desenhar_chao(posx, objeto):
 # Função para desenhar a esfera representando a luz
 def desenhar_esfera(L, L2, L3, light_color):
     glPushMatrix()
-    glTranslatef(L, L2, L3)
+    glTranslatef(L, L2+10, L3)
     glUseProgram(main_shader)  # Use o shader para a esfera
     corEsfera = light_color # Mudar a cor da esfera para vermelho
     configurar_material(corEsfera)  # Configurar material da esfera
@@ -333,8 +384,7 @@ def animacao(value):
         if T2 < posCubeY2+9.5:
             T2 = posCubeY2+9.5
             pulo = True
- 
- 
+        
     #implementa gravidade
     if T2 > -3:
         T2 -= 0.4
@@ -349,6 +399,7 @@ def animacao(value):
   
 
 def init():
+
     glClearColor (0.3, 0.3, 0.3, 0.0) # cor de fundo
     glShadeModel( GL_SMOOTH ) # tipo de sombreamento
     glClearColor( 0.13, 0.41, 0.58, 1.0 ) # cor de fundo
@@ -413,6 +464,8 @@ bandeira = pywavefront.Wavefront("flag.obj")
 pygame.mixer.init()
 pygame.mixer.music.load('Super Mario Bros. Soundtrack.mp3')
 pygame.mixer.music.play(-1)
+
+
 
 glutDisplayFunc(display)
 glutReshapeFunc(resize)
