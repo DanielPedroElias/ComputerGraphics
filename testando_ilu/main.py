@@ -11,10 +11,21 @@ from OpenGL.GL import shaders
 # Variáveis de movimentação e posição
 T, T2, T3 = 1, 1, 1  # Movimentação nos eixos X, Y e Z
 L, L2, L3 = 0.0, 20.0, 0.0  # Posição da luz
-pulo = 0
+
+pulo = False
+
 posChaoX = -5
+
 posCubeX, posCubeY = -5, 7
-camx, camy, camz = 0.0, 10.0, 30.0  # Posição da câmera
+
+posCubeX2 = 36
+posCubeY2 = 1
+
+posChaoX2 = 80
+
+posCastlex = 85
+
+camx, camy, camz = 5.0, 10.0, 30.0  # Posição da câmera
 
 # Função para desenhar o objeto utilizando o shader
 def obj_draw_shader(objeto):
@@ -41,10 +52,14 @@ def display():
 
     # Movimenta a câmera
     global camx, camy, camz
+    
     if T > camx + 12:
-        camx += 1
+        if camx < 70.0:
+            camx += 1
     elif T < camx - 12:
-        camx -= 1
+        if camx > 5.0:
+            camx -= 1
+
     gluLookAt(camx, camy, camz, camx, camy, 0.0, 0.0, 1.0, 0.0)
 
 
@@ -67,9 +82,43 @@ def display():
     desenhar_cubo(posCubeX + 14, posCubeY + 7, cube)
     desenhaCubes(posCubeX + 10, posCubeY, 5)
 
+    # Desenha o cubo
+    global posCubeX2, posCubeY2
+    
+    desenhar_cubo(posCubeX2, posCubeY2, cube)
+    desenhar_cubo(posCubeX2 + 2, posCubeY2, cube)
+    desenhar_cubo(posCubeX2 + 4, posCubeY2, cube)
+    desenhar_cubo(posCubeX2 + 6, posCubeY2, cube)
+    desenhar_cubo(posCubeX2 + 8, posCubeY2, cube)
+    desenhar_cubo(posCubeX2 + 2, posCubeY2 +2 , cube)
+    desenhar_cubo(posCubeX2 + 4, posCubeY2 +2 , cube)
+    desenhar_cubo(posCubeX2 + 6, posCubeY2 +2 , cube)
+    desenhar_cubo(posCubeX2 + 8, posCubeY2 +2 , cube)
+    desenhar_cubo(posCubeX2 + 4, posCubeY2 +4 , cube)
+    desenhar_cubo(posCubeX2 + 6, posCubeY2 +4 , cube)
+    desenhar_cubo(posCubeX2 + 8, posCubeY2 +4 , cube)
+    desenhar_cubo(posCubeX2 + 6, posCubeY2 +6 , cube)
+    desenhar_cubo(posCubeX2 + 8, posCubeY2 +6 , cube)
+    desenhar_cubo(posCubeX2 + 8, posCubeY2 +8 , cube)
+
     # Desenha o chão
+
     desenhar_chao(posChaoX, chao)
-    desenhar_chao(posChaoX + 35, chao)
+ 
+    desenhar_chao(posChaoX + 35, chao )
+
+    desenhar_chao(posChaoX2, chao)
+
+    # Desenha o castelo
+    glPushMatrix()
+    glTranslatef(posCastlex, -0.1, -9)
+    glScalef(.3, .3, .3)
+    glUseProgram(main_shader)
+    corCastelo = (1.0, 0.5, 0.0, 1.0)  # Laranja (RGB: 255, 127, 0)    
+    configurar_material(corCastelo)
+    obj_draw_shader(castelo)
+    glPopMatrix()
+
 
     # Desenha a esfera de luz
     desenhar_esfera(L, L2, L3, corLuz)
@@ -96,7 +145,7 @@ def desenhar_cubo(posx, posy, objeto):
 # Função para desenhar o chão
 def desenhar_chao(posx, objeto):
     glPushMatrix()
-    glTranslatef(posx, -1, 0)
+    glTranslatef(posx, -1, 2)
     glUseProgram(main_shader)
     corChao = (0.5, .3, 0.1, 1)
     configurar_material(corChao)
@@ -178,12 +227,13 @@ def Keys(key, x, y):
         T -= 1
     elif(key == b'd'): 
         T += 1
-    elif((key == b'w') and T2 <= 1) or pulo == 1: 
+    elif((key == b'w') and T2 <= 1) or (pulo == True and key == b'w'): 
         T2 += 8
-        if pulo == 1:
-            pulo = 0
+        if pulo == True:
+            pulo = False
     elif(key == b's'): 
         T2 -= 1
+
     elif(key == b'q'): 
         T3 -= 1
     elif(key == b'e'): 
@@ -213,34 +263,67 @@ def animacao(value):
     
     #colisao do chao
     # chao tem tamanho = 30
+
     global T, T2, T3, pulo
-    global posChaoX, posCubeY
+    global posChaoX, posCubeY, posCubeX, posCubeX2, posCubeY2
+
+    if T <= -17:
+        T = -17
+    elif T >= 92:
+        T = 92
 
     if T > posChaoX -16 and T < posChaoX + 16:
-        if T2 < 0:
-            T2 = 0
+        if T2 < 1:
+            T2 = 1
     elif T > posChaoX -16 + 35 and T < posChaoX +16 + 35:
-        if T2 < 0:
-            T2 = 0
+        if T2 < 1:
+            T2 = 1
+    elif T > posChaoX2 -16 and T < posChaoX2 + 16:  
+        if T2 < 1:
+            T2 = 1
     if (T > posCubeX -2 and T < posCubeX + 2) and T2 >= posCubeY:
         if T2 < posCubeY+1:
             T2 = posCubeY+1
-            pulo = 1
+            pulo = True
+        
     elif ( T > posCubeX+12 and T < posCubeX+16) and T2 >= posCubeY+7:
         if T2 < posCubeY+8:
             T2 = posCubeY+8
-            pulo = 1
+            pulo = True
     elif (T > posCubeX+8 and T < posCubeX+20) and T2 >= posCubeY:
         if T2 < posCubeY+1:
             T2 = posCubeY+1
-            pulo = 1
-    else:
-        pulo = 0
+            pulo = True
 
+    if (T > posCubeX2 -2 and T < posCubeX2 + 1) :
+        if T2 < posCubeY2+1:
+            T2 = posCubeY2+1    
+            pulo = True
 
+    elif (T > posCubeX2 -1 and T < posCubeX2 + 3) :
+        if T2 < posCubeY2+3:
+            T2 = posCubeY2+3
+            pulo = True
+
+    elif (T > posCubeX2 and T < posCubeX2 + 5) :
+        if T2 < posCubeY2+5:
+            T2 = posCubeY2+5
+            pulo = True
+
+    elif (T > posCubeX2 + 1 and T < posCubeX2 + 7) :
+        if T2 < posCubeY2+7:
+            T2 = posCubeY2+7
+            pulo = True
+
+    elif (T > posCubeX2 + 2 and T < posCubeX2 + 10) :
+        if T2 < posCubeY2+9:
+            T2 = posCubeY2+9
+            pulo = True
+ 
+ 
     #implementa gravidade
     if T2 > -3:
-        T2 -= 0.1
+        T2 -= 0.4
 
     if T2 <= -3: 
         print("you died")
@@ -308,6 +391,7 @@ mario = pywavefront.Wavefront("mario.obj")
 cube = pywavefront.Wavefront("cube.obj")
 chao = pywavefront.Wavefront("chao.obj")
 caixa = pywavefront.Wavefront("caixaInterrogacao.obj")
+castelo = pywavefront.Wavefront("castelo.obj")
 
 # inicia a mudica de fundo
 pygame.mixer.init()
