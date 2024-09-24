@@ -19,11 +19,13 @@ posChaoX = -5
 posCubeX, posCubeY = -5, 7
 
 posCubeX2 = 36
-posCubeY2 = 1
+posCubeY2 = 0.9
 
 posChaoX2 = 80
 
 posCastlex = 85
+
+posBandeira = 70
 
 camx, camy, camz = 5.0, 10.0, 30.0  # Posição da câmera
 
@@ -107,7 +109,7 @@ def display():
  
     desenhar_chao(posChaoX + 35, chao )
 
-    desenhar_chao(posChaoX2, chao)
+    desenhar_chao(posChaoX2, chaoCastelo)
 
     # Desenha o castelo
     glPushMatrix()
@@ -119,6 +121,14 @@ def display():
     obj_draw_shader(castelo)
     glPopMatrix()
 
+    # Desenha a bandeira
+    glPushMatrix()
+    glTranslatef(posBandeira, 0, 0)
+    glUseProgram(main_shader)
+    corBandeira = (1.0, 1.0, 1.0, 1.0)
+    configurar_material(corBandeira)
+    obj_draw_shader(bandeira)
+    glPopMatrix()
 
     # Desenha a esfera de luz
     desenhar_esfera(L, L2, L3, corLuz)
@@ -126,7 +136,7 @@ def display():
     glUseProgram(0)
 
     # Desenha os eixos de coordenadas
-    desenhar_eixos()
+   # desenhar_eixos()
 
     glutSwapBuffers()
 
@@ -267,57 +277,61 @@ def animacao(value):
     global T, T2, T3, pulo
     global posChaoX, posCubeY, posCubeX, posCubeX2, posCubeY2
 
+    # limites laterais
     if T <= -17:
         T = -17
     elif T >= 92:
         T = 92
-
+    # Colisa com o chão
     if T > posChaoX -16 and T < posChaoX + 16:
-        if T2 < 1:
-            T2 = 1
+        if T2 < 0.35:
+            T2 = 0.35
     elif T > posChaoX -16 + 35 and T < posChaoX +16 + 35:
-        if T2 < 1:
-            T2 = 1
+        if T2 < 0.35:
+            T2 = 0.35
     elif T > posChaoX2 -16 and T < posChaoX2 + 16:  
-        if T2 < 1:
-            T2 = 1
+        if T2 < 0.35:
+            T2 = 0.35
+
+    # Colisao com os cubos
     if (T > posCubeX -2 and T < posCubeX + 2) and T2 >= posCubeY:
-        if T2 < posCubeY+1:
-            T2 = posCubeY+1
+        if T2 < posCubeY+1.5:
+            T2 = posCubeY+1.5
             pulo = True
         
     elif ( T > posCubeX+12 and T < posCubeX+16) and T2 >= posCubeY+7:
-        if T2 < posCubeY+8:
-            T2 = posCubeY+8
+        if T2 < posCubeY+8.5:
+            T2 = posCubeY+8.5
             pulo = True
     elif (T > posCubeX+8 and T < posCubeX+20) and T2 >= posCubeY:
-        if T2 < posCubeY+1:
-            T2 = posCubeY+1
+        if T2 < posCubeY+1.5:
+            T2 = posCubeY+1.5
             pulo = True
 
+    # Colisao com os cubos em formato de escaad
     if (T > posCubeX2 -2 and T < posCubeX2 + 1) :
-        if T2 < posCubeY2+1:
-            T2 = posCubeY2+1    
+        if T2 < posCubeY2+1.5:
+            T2 = posCubeY2+1.5    
             pulo = True
 
     elif (T > posCubeX2 -1 and T < posCubeX2 + 3) :
-        if T2 < posCubeY2+3:
-            T2 = posCubeY2+3
+        if T2 < posCubeY2+3.5:
+            T2 = posCubeY2+3.5
             pulo = True
 
     elif (T > posCubeX2 and T < posCubeX2 + 5) :
-        if T2 < posCubeY2+5:
-            T2 = posCubeY2+5
+        if T2 < posCubeY2+5.5:
+            T2 = posCubeY2+5.5
             pulo = True
 
     elif (T > posCubeX2 + 1 and T < posCubeX2 + 7) :
-        if T2 < posCubeY2+7:
-            T2 = posCubeY2+7
+        if T2 < posCubeY2+7.5:
+            T2 = posCubeY2+7.5
             pulo = True
 
     elif (T > posCubeX2 + 2 and T < posCubeX2 + 10) :
-        if T2 < posCubeY2+9:
-            T2 = posCubeY2+9
+        if T2 < posCubeY2+9.5:
+            T2 = posCubeY2+9.5
             pulo = True
  
  
@@ -390,8 +404,10 @@ init()
 mario = pywavefront.Wavefront("mario.obj")
 cube = pywavefront.Wavefront("cube.obj")
 chao = pywavefront.Wavefront("chao.obj")
+chaoCastelo = pywavefront.Wavefront("chaoCastelo.obj")
 caixa = pywavefront.Wavefront("caixaInterrogacao.obj")
 castelo = pywavefront.Wavefront("castelo.obj")
+bandeira = pywavefront.Wavefront("flag.obj")
 
 # inicia a mudica de fundo
 pygame.mixer.init()
