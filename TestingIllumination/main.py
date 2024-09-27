@@ -1,54 +1,47 @@
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL.GLUT import *
-import pywavefront
-from pywavefront import visualization
-import numpy as np
-from OpenGL.arrays import vbo
-from OpenGL.GL import shaders
-from moviepy.editor import VideoFileClip
 
-import pygame
+# Importações necessárias
+from OpenGL.GL import * # Importa todas as funções do OpenGL
+from OpenGL.GLU import * # Importa todas as funções do OpenGL Utility Library pra criar a câmera
+from OpenGL.GLUT import * # Importa todas as funções do OpenGL Utility Toolkit pra criar a janela
+import pywavefront # Importa a biblioteca PyWavefront pra carregar objetos 3D
+from pywavefront import visualization  # Importa a função visualization da biblioteca PyWavefront pra visualizar os objetos 3D
+import numpy as np # Importa a biblioteca NumPy pra trabalhar com arrays
+from OpenGL.arrays import vbo # Importa a classe vbo pra trabalhar com Vertex Buffer Objects
+from OpenGL.GL import shaders # Importa a classe shaders pra trabalhar com shaders
+
+from moviepy.editor import VideoFileClip # Importa a classe VideoFileClip da biblioteca MoviePy pra reproduzir vídeos
+import pygame # Importa a biblioteca Pygame pra reproduzir música de fundo
 
 # Variáveis de movimentação e posição
 T, T2, T3 = 1, 1, 1  # Movimentação nos eixos X, Y e Z
 L, L2, L3 = 0.0, 10.0, 0.0  # Posição da luz
-
 pulo = False
 
+# Variáveis de posição dos objetos
+# posição do chão
 posChaoX = -5
 
+# posição do cubo
 posCubeX, posCubeY = -5, 7
 
+# posição do cubo 2 (para fazer a escada)
 posCubeX2 = 36
 posCubeY2 = 0.9
 
+# posição do chao do castelo
 posChaoX2 = 80
 
+# posição do castelo
 posCastlex = 85
 
+# posição da bandeira
 posBandeira = 70
 
 camx, camy, camz = 5.0, 10.0, 30.0  # Posição da câmera
 
+# variavel pra controlar a reprodução do video
 controle = 0
 
-# Função para desenhar o objeto utilizando o shader
-def obj_draw_shader(objeto):
-    objs = list(objeto.materials.keys())
-    vertices = objeto.materials[objs[0]].vertices
-    vertices = np.array(vertices, dtype=np.float32).reshape(-1, 6)
-    vbo_objeto = vbo.VBO(vertices)
-
-    vbo_objeto.bind()
-    glEnableClientState(GL_VERTEX_ARRAY)
-    glEnableClientState(GL_NORMAL_ARRAY)
-    glVertexPointer(3, GL_FLOAT, 24, vbo_objeto + 12)
-    glNormalPointer(GL_FLOAT, 24, vbo_objeto)
-    glDrawArrays(GL_TRIANGLES, 0, vertices.shape[0])
-    vbo_objeto.unbind()
-    glDisableClientState(GL_VERTEX_ARRAY)
-    glDisableClientState(GL_NORMAL_ARRAY)
 
 # Função display para renderização
 def display():
@@ -91,20 +84,15 @@ def display():
     # Desenha o cubo
     global posCubeX2, posCubeY2
     
-    desenhar_cubo(posCubeX2, posCubeY2, cube)
-    desenhar_cubo(posCubeX2 + 2, posCubeY2, cube)
-    desenhar_cubo(posCubeX2 + 4, posCubeY2, cube)
-    desenhar_cubo(posCubeX2 + 6, posCubeY2, cube)
-    desenhar_cubo(posCubeX2 + 8, posCubeY2, cube)
-    desenhar_cubo(posCubeX2 + 2, posCubeY2 +2 , cube)
-    desenhar_cubo(posCubeX2 + 4, posCubeY2 +2 , cube)
-    desenhar_cubo(posCubeX2 + 6, posCubeY2 +2 , cube)
-    desenhar_cubo(posCubeX2 + 8, posCubeY2 +2 , cube)
-    desenhar_cubo(posCubeX2 + 4, posCubeY2 +4 , cube)
-    desenhar_cubo(posCubeX2 + 6, posCubeY2 +4 , cube)
-    desenhar_cubo(posCubeX2 + 8, posCubeY2 +4 , cube)
-    desenhar_cubo(posCubeX2 + 6, posCubeY2 +6 , cube)
-    desenhar_cubo(posCubeX2 + 8, posCubeY2 +6 , cube)
+    # desenha a primeira linha da escada
+    desenhaCubes(posCubeX2, posCubeY2, 5)
+    # desenha a segunda linha da escada
+    desenhaCubes(posCubeX2 +2, posCubeY2 +2, 4)
+    # desenha a terceira linha da escada
+    desenhaCubes(posCubeX2 +4, posCubeY2 +4, 3)
+    # desenha a quarta linha da escada
+    desenhaCubes(posCubeX2 +6, posCubeY2 +6, 2)
+    # desenha o ultimo cubo da escada
     desenhar_cubo(posCubeX2 + 8, posCubeY2 +8 , cube)
 
     # Desenha o chão
@@ -137,10 +125,9 @@ def display():
     # Desenha a esfera de luz
     desenhar_esfera(L, L2, L3, corLuz)
 
-    glUseProgram(0)
 
     # Desenha os eixos de coordenadas
-   # desenhar_eixos()
+    # desenhar_eixos()
 
     # colisão com o castelo
     global controle
@@ -149,16 +136,26 @@ def display():
         controle = 1
         play_video("media/conquista.mp4")  # Agora usa a função que executa o vídeo em um processo paralelo
 
-            
+    glUseProgram(0) # Desativa o shader
+
     glutSwapBuffers()
 
+# Função para desenhar o objeto utilizando o shader
+def obj_draw_shader(objeto):
+    objs = list(objeto.materials.keys())
+    vertices = objeto.materials[objs[0]].vertices
+    vertices = np.array(vertices, dtype=np.float32).reshape(-1, 6)
+    vbo_objeto = vbo.VBO(vertices)
 
-
-# Função que reproduz o vídeo
-def play_video(video_path):
-    video = VideoFileClip(video_path)
-    video.preview()
-
+    vbo_objeto.bind()
+    glEnableClientState(GL_VERTEX_ARRAY)
+    glEnableClientState(GL_NORMAL_ARRAY)
+    glVertexPointer(3, GL_FLOAT, 24, vbo_objeto + 12)
+    glNormalPointer(GL_FLOAT, 24, vbo_objeto)
+    glDrawArrays(GL_TRIANGLES, 0, vertices.shape[0])
+    vbo_objeto.unbind()
+    glDisableClientState(GL_VERTEX_ARRAY)
+    glDisableClientState(GL_NORMAL_ARRAY)
 
 # Função para desenhar os cubos
 def desenhar_cubo(posx, posy, objeto):
@@ -189,7 +186,6 @@ def desenhar_esfera(L, L2, L3, light_color):
     configurar_material(corEsfera)  # Configurar material da esfera
     glutSolidSphere(0.8, 16, 8)
     glPopMatrix()
-
 
 # Função para desenhar os eixos de coordenadas
 def desenhar_eixos():
@@ -233,6 +229,17 @@ def desenhaCubes(posx, posy, quantidade):
     for i in range(quantidade):
         desenhar_cubo(posx + (i + i), posy, cube)
 
+# Função que reproduz o vídeo
+def play_video(video_path):
+    video = VideoFileClip(video_path)
+    video.preview()
+
+# Função para tocar música de fundo 
+def play_background_music(music_path):
+    pygame.mixer.init()
+    pygame.mixer.music.load(music_path)
+    pygame.mixer.music.play(-1)
+
 # Função para redimensionar a tela
 def resize(w, h):
     glViewport(0, 0, w, h)
@@ -241,9 +248,6 @@ def resize(w, h):
     gluPerspective(45, w / h, 0.1, 100.0)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-
-    
-
 
 def Keys(key, x, y):
 
@@ -359,12 +363,6 @@ def animacao(value):
     if T2 <= -3: 
         print("you died")
     
-    
-
-
-
-  
-
 def init():
 
     glClearColor (0.3, 0.3, 0.3, 0.0) # cor de fundo
@@ -408,9 +406,7 @@ def init():
         'Vertex_position': glGetAttribLocation( main_shader, 'Vertex_position' ),
         'Vertex_normal': glGetAttribLocation( main_shader, 'Vertex_normal' )
     }
-
     
-
 glutInit()
 glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB)
 glutInitWindowSize(1920, 1080)
@@ -419,6 +415,7 @@ wind = glutCreateWindow("Cubo")
 
 init()
 
+# Carrega os objetos 3D
 mario = pywavefront.Wavefront("media/mario.obj")
 cube = pywavefront.Wavefront("media/cube.obj")
 chao = pywavefront.Wavefront("media/chao.obj")
@@ -428,11 +425,7 @@ castelo = pywavefront.Wavefront("media/castelo.obj")
 bandeira = pywavefront.Wavefront("media/flag.obj")
 
 # inicia a mudica de fundo
-pygame.mixer.init()
-pygame.mixer.music.load('media/Super Mario Bros. Soundtrack.mp3')
-pygame.mixer.music.play(-1)
-
-
+play_background_music("media/Super Mario Bros. Soundtrack.mp3")
 
 glutDisplayFunc(display)
 glutReshapeFunc(resize)
