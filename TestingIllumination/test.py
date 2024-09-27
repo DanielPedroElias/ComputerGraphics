@@ -1,8 +1,38 @@
+import pygame
 from moviepy.editor import VideoFileClip
 
-video = VideoFileClip("conquista.mp4")
+# Inicializa o pygame
+pygame.init()
 
-video.preview()
+# Função para tocar música de fundo
+def play_background_music(music_path):
+    pygame.mixer.music.load(music_path)
+    pygame.mixer.music.play(-1)  # Reproduz a música em loop
+
+# Função que reproduz o vídeo e fecha a janela ao final
+def play_video(video_path):
+    # Carrega o vídeo
+    video = VideoFileClip(video_path)
+
+    # Exibe o vídeo em uma nova janela
+    video.preview()
+
+    # Fecha o vídeo automaticamente após a reprodução
+    video.close()
+
+# Caminho para o arquivo de música e vídeo
+music_path = "Super Mario Bros. Soundtrack.mp3"
+video_path = "conquista.mp4"
+
+# Tocar música de fundo
+play_background_music(music_path)
+
+# Reproduzir o vídeo sem parar a música de fundo
+play_video(video_path)
+
+# Após o vídeo, a música continua tocando até que o programa seja encerrado
+input("Pressione Enter para sair...")
+pygame.quit()
 
 #  bark
 # def play_video(video_path):

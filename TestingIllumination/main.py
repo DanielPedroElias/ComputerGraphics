@@ -8,12 +8,7 @@ from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
 from moviepy.editor import VideoFileClip
 
-from multiprocessing import Process
-from moviepy.editor import VideoFileClip
-
 import pygame
-import cv2
-import sys
 
 # Variáveis de movimentação e posição
 T, T2, T3 = 1, 1, 1  # Movimentação nos eixos X, Y e Z
@@ -152,7 +147,7 @@ def display():
     # Dentro da função display (onde ocorre a colisão com o castelo)
     if (T > posCastlex - 5 and T < posCastlex + 5) and controle == 0:
         controle = 1
-        start_video("conquista.mp4")  # Agora usa a função que executa o vídeo em um processo paralelo
+        play_video("conquista.mp4")  # Agora usa a função que executa o vídeo em um processo paralelo
 
             
     glutSwapBuffers()
@@ -164,10 +159,6 @@ def play_video(video_path):
     video = VideoFileClip(video_path)
     video.preview()
 
-# Função que chama a reprodução do vídeo em um novo processo
-def start_video(video_path):
-    video_process = Process(target=play_video, args=(video_path,))
-    video_process.start()
 
 # Função para desenhar os cubos
 def desenhar_cubo(posx, posy, objeto):
