@@ -6,6 +6,10 @@ from pywavefront import visualization
 import numpy as np
 from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
+from moviepy.editor import VideoFileClip
+
+from multiprocessing import Process
+from moviepy.editor import VideoFileClip
 
 import pygame
 import cv2
@@ -145,53 +149,25 @@ def display():
 
     # colisão com o castelo
     global controle
+    # Dentro da função display (onde ocorre a colisão com o castelo)
     if (T > posCastlex - 5 and T < posCastlex + 5) and controle == 0:
-            controle = 1
-            play_video("conquista.mp4")  # Chama a função para tocar o vídeo
+        controle = 1
+        start_video("conquista.mp4")  # Agora usa a função que executa o vídeo em um processo paralelo
+
             
     glutSwapBuffers()
 
 
 
+# Função que reproduz o vídeo
 def play_video(video_path):
-    # Inicializa o Pygame
-    pygame.init()
+    video = VideoFileClip(video_path)
+    video.preview()
 
-        # Configura a janela do Pygame
-    screen = pygame.display.set_mode((720, 720))
-
-    # Carrega o vídeo com OpenCV
-    cap = cv2.VideoCapture(video_path)
-
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-
-        # Converte de BGR para RGB
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # Converte a imagem para superfície do Pygame
-        frame = pygame.surfarray.make_surface(frame)
-
-        # Exibe o frame na janela do Pygame
-        screen.blit(frame, (0, 0))
-        pygame.display.flip()
-
-        # Gerencia eventos do Pygame
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                cap.release()
-                pygame.quit()
-                sys.exit()
-        
-        # Atraso para controlar a taxa de quadros
-        pygame.time.delay(30)
-
-    cap.release()
-    pygame.quit() # Fecha o Pygame
+# Função que chama a reprodução do vídeo em um novo processo
+def start_video(video_path):
+    video_process = Process(target=play_video, args=(video_path,))
+    video_process.start()
 
 # Função para desenhar os cubos
 def desenhar_cubo(posx, posy, objeto):
