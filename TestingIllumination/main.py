@@ -147,7 +147,7 @@ def display():
     # Dentro da função display (onde ocorre a colisão com o castelo)
     if (T > posCastlex - 5 and T < posCastlex + 5) and controle == 0:
         controle = 1
-        play_video("conquista.mp4")  # Agora usa a função que executa o vídeo em um processo paralelo
+        play_video("media/conquista.mp4")  # Agora usa a função que executa o vídeo em um processo paralelo
 
             
     glutSwapBuffers()
@@ -379,8 +379,8 @@ def init():
     glDepthFunc( GL_LEQUAL )
     glEnable( GL_DEPTH_TEST )
     
-    vertexShader = shaders.compileShader(open('main.vert', 'r').read(), GL_VERTEX_SHADER)
-    fragmentShader = shaders.compileShader(open('main.frag', 'r').read(), GL_FRAGMENT_SHADER)
+    vertexShader = shaders.compileShader(open('shaders/main.vert', 'r').read(), GL_VERTEX_SHADER)
+    fragmentShader = shaders.compileShader(open('shaders/main.frag', 'r').read(), GL_FRAGMENT_SHADER)
 
     global main_shader
     main_shader = glCreateProgram()
@@ -419,17 +419,17 @@ wind = glutCreateWindow("Cubo")
 
 init()
 
-mario = pywavefront.Wavefront("mario.obj")
-cube = pywavefront.Wavefront("cube.obj")
-chao = pywavefront.Wavefront("chao.obj")
-chaoCastelo = pywavefront.Wavefront("chaoCastelo.obj")
-caixa = pywavefront.Wavefront("caixaInterrogacao.obj")
-castelo = pywavefront.Wavefront("castelo.obj")
-bandeira = pywavefront.Wavefront("flag.obj")
+mario = pywavefront.Wavefront("media/mario.obj")
+cube = pywavefront.Wavefront("media/cube.obj")
+chao = pywavefront.Wavefront("media/chao.obj")
+chaoCastelo = pywavefront.Wavefront("media/chaoCastelo.obj")
+caixa = pywavefront.Wavefront("media/caixaInterrogacao.obj")
+castelo = pywavefront.Wavefront("media/castelo.obj")
+bandeira = pywavefront.Wavefront("media/flag.obj")
 
 # inicia a mudica de fundo
 pygame.mixer.init()
-pygame.mixer.music.load('Super Mario Bros. Soundtrack.mp3')
+pygame.mixer.music.load('media/Super Mario Bros. Soundtrack.mp3')
 pygame.mixer.music.play(-1)
 
 
