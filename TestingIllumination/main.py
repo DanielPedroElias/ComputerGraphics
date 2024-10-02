@@ -8,6 +8,7 @@ from pywavefront import visualization  # Importa a função visualization da bib
 import numpy as np # Importa a biblioteca NumPy pra trabalhar com arrays
 from OpenGL.arrays import vbo # Importa a classe vbo pra trabalhar com Vertex Buffer Objects
 from OpenGL.GL import shaders # Importa a classe shaders pra trabalhar com shaders
+import cv2  # Usando OpenCV para carregar e ler o vídeo
 
 from moviepy.editor import VideoFileClip # Importa a classe VideoFileClip da biblioteca MoviePy pra reproduzir vídeos
 import pygame # Importa a biblioteca Pygame pra reproduzir música de fundo
@@ -20,6 +21,7 @@ Fx, Fy, Fz = 18, 0, 0  # Posição do foco da luz
 Teclaw = False
 pulo = False
 
+pygame.mixer.
 # Variáveis de posição dos objetos
 # posição do chão
 posChaoX = -5
@@ -145,6 +147,9 @@ def display():
     if T >= Fx - 1 and T <= Fx + 1 and fds == True:
         DesenhaTexto("Bateu no freddy", 0.0, 1.0)
         fds = False
+        DesenhaVideo("a.mp4", Fx-4, 0, 6, 4)
+
+
 
     # Desenha os eixos de coordenadas
     #desenhar_eixos()
@@ -169,6 +174,71 @@ def DesenhaTexto(text, x, y, font=GLUT_BITMAP_HELVETICA_18):
         glutBitmapCharacter(font, ord(ch))  # Desenha cada caractere do texto
     glPopMatrix() # Restaura a matriz de transformação anterior
 
+def CarregaTexturaDoFrame(frame):
+    # Converte o frame para uma textura OpenGL
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    altura, largura, _ = frame_rgb.shape
+
+    # Gera uma nova textura
+    textura_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, textura_id)
+
+    # Definir parâmetros de textura
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    # Transferir os dados do frame para a textura
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, largura, altura, 0, GL_RGB, GL_UNSIGNED_BYTE, frame_rgb)
+
+    return textura_id
+
+def DesenhaVideo(arquivo_video, x, y, largura, altura):
+    # Carrega o vídeo usando OpenCV
+    video = cv2.VideoCapture(arquivo_video)
+
+    # Verifica se o vídeo foi carregado corretamente
+    if not video.isOpened():
+        print("Erro ao abrir o vídeo.")
+        return
+
+    while True:
+        ret, frame = video.read()  # Lê um frame do vídeo
+        if not ret:
+            break  # Sai do loop se o vídeo terminar
+
+        textura_id = CarregaTexturaDoFrame(frame)
+
+        # Desenhar um quadrilátero com a textura do frame
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, textura_id)
+
+        glPushMatrix()  # Salva a matriz de transformação atual
+
+        # Define a posição do quadrilátero na tela
+        glTranslatef(x, y, 0)
+
+        # Desenha o quadrilátero com a textura do frame do vídeo
+        glBegin(GL_QUADS)
+        glTexCoord2f(0.0, 0.0); glVertex2f(0, 0)  # Inferior esquerdo
+        glTexCoord2f(1.0, 0.0); glVertex2f(largura, 0)  # Inferior direito
+        glTexCoord2f(1.0, 1.0); glVertex2f(largura, altura)  # Superior direito
+        glTexCoord2f(0.0, 1.0); glVertex2f(0, altura)  # Superior esquerdo
+        glEnd()
+
+        glPopMatrix()  # Restaura a matriz de transformação anterior
+
+        # Exibe o frame na janela
+        glutSwapBuffers()
+
+        # Libera a textura para o próximo frame
+        glDeleteTextures([textura_id])
+
+        # Controle de velocidade do vídeo (depende do framerate)
+        cv2.waitKey(30)
+
+    video.release()  # Libera o vídeo após terminar
 # Função para desenhar o objeto utilizando o shader
 def obj_draw_shader(objeto):
     objs = list(objeto.materials.keys())
@@ -270,7 +340,7 @@ def play_background_music(music_path):
     pygame.mixer.music.load(music_path)
     pygame.mixer.music.play(-1)
     # seta o volume 
-    pygame.mixer.music.set_volume(0)
+    pygame.mixer.music.set_volume(0 )
 
 # Função para redimensionar a tela
 def resize(w, h):
