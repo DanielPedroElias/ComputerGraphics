@@ -11,10 +11,13 @@ from OpenGL.GL import shaders # Importa a classe shaders pra trabalhar com shade
 
 from moviepy.editor import VideoFileClip # Importa a classe VideoFileClip da biblioteca MoviePy pra reproduzir vídeos
 import pygame # Importa a biblioteca Pygame pra reproduzir música de fundo
+from OpenGL.GLUT.fonts import GLUT_BITMAP_HELVETICA_18 # Importa a constante GLUT_BITMAP_HELVETICA_18
 
 # Variáveis de movimentação e posição
-T, T2, T3 = 1, 1, 1  # Movimentação nos eixos X, Y e Z
-L, L2, L3 = 0.0, 10.0, 0.0  # Posição da luz
+T, T2, T3 = 1, 1, 0  # Movimentação nos eixos X, Y e Z
+L, L2, L3 = 0.0, 20.0, 0.0  # Posição da luz
+Fx, Fy, Fz = 18, 0, 0  # Posição do foco da luz
+Teclaw = False
 pulo = False
 
 # Variáveis de posição dos objetos
@@ -25,8 +28,7 @@ posChaoX = -5
 posCubeX, posCubeY = -5, 7
 
 # posição do cubo 2 (para fazer a escada)
-posCubeX2 = 36
-posCubeY2 = 0.9
+posCubeX2, posCubeY2 = 36, 0.9
 
 # posição do chao do castelo
 posChaoX2 = 80
@@ -42,7 +44,7 @@ camx, camy, camz = 5.0, 10.0, 30.0  # Posição da câmera
 # variavel pra controlar a reprodução do video
 controle = 0
 
-
+fds = True
 # Função display para renderização
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -53,13 +55,15 @@ def display():
     global camx, camy, camz
     
     if T > camx + 12:
-        if camx < 70.0:
-            camx += 1
+        # if camx < 70000.0:
+        camx += 1
     elif T < camx - 12:
-        if camx > 5.0:
-            camx -= 1
+        # if camx > 5.0:
+        camx -= 1
 
-    gluLookAt(camx, camy, camz, camx, camy, 0.0, 0.0, 1.0, 0.0)
+    gluLookAt(camx, camy, camz, 
+              camx, camy, 0.0, 
+              0.0, 1.0, 0.0)
 
 
     # Desenha o personagem principal (Mario)
@@ -69,7 +73,7 @@ def display():
     glUseProgram(main_shader)
 
     corObj = (0.5, 0.0, 0.0, 1)  # Cor do objeto
-    corLuz = (1.0, 1.0, 1.0, 1.0)  # Cor da luz
+    corLuz = (0.75, 0.75, 0.75, 1.0)  # Cor da luz
     configurar_material(corObj)
     configurar_luz(L, L2, L3,corLuz)
 
@@ -124,10 +128,26 @@ def display():
 
     # Desenha a esfera de luz
     desenhar_esfera(L, L2, L3, corLuz)
+    global fds 
+    if fds == True:
+        # desenha o inimigo
+        glPushMatrix()
+        glTranslatef(Fx, Fy, Fz)
+        glUseProgram(main_shader)
+        corInimigo = (1.0, 1.0, 0.0, 1.0)
+        configurar_material(corInimigo)
+        obj_draw_shader(Freddy)
+        glPopMatrix()
 
+    glUseProgram(0) # Desativa o shader
+
+    # colisao do inimigo
+    if T >= Fx - 1 and T <= Fx + 1 and fds == True:
+        DesenhaTexto("Bateu no freddy", 0.0, 1.0)
+        fds = False
 
     # Desenha os eixos de coordenadas
-    # desenhar_eixos()
+    #desenhar_eixos()
 
     # colisão com o castelo
     global controle
@@ -136,9 +156,18 @@ def display():
         controle = 1
         play_video("media/conquista.mp4")  # Agora usa a função que executa o vídeo em um processo paralelo
 
-    glUseProgram(0) # Desativa o shader
+    
 
     glutSwapBuffers()
+    
+# Função para desenhar texto na tela
+def DesenhaTexto(text, x, y, font=GLUT_BITMAP_HELVETICA_18):
+    glPushMatrix() # Salva a matriz de transformação atual
+    glRasterPos2f(x, y)  # Define a posição do texto
+    # para cada caractere no texto
+    for ch in text:
+        glutBitmapCharacter(font, ord(ch))  # Desenha cada caractere do texto
+    glPopMatrix() # Restaura a matriz de transformação anterior
 
 # Função para desenhar o objeto utilizando o shader
 def obj_draw_shader(objeto):
@@ -180,7 +209,7 @@ def desenhar_chao(posx, objeto):
 # Função para desenhar a esfera representando a luz
 def desenhar_esfera(L, L2, L3, light_color):
     glPushMatrix()
-    glTranslatef(L, L2+10, L3)
+    glTranslatef(L, L2, L3)
     glUseProgram(main_shader)  # Use o shader para a esfera
     corEsfera = light_color # Mudar a cor da esfera para vermelho
     configurar_material(corEsfera)  # Configurar material da esfera
@@ -220,6 +249,7 @@ def configurar_material(cor):
 # Função para configurar as luzes
 def configurar_luz(L, L2, L3, light_color):
     glUniform4f(LIGTH_LOCATIONS['Global_ambient'], 0.1, 0.1, 0.1, 1.0)
+    glUniform4f( LIGTH_LOCATIONS['Light_ambient'], 0.2, 0.2, 0.2, 1.0 )
     glUniform3f(LIGTH_LOCATIONS['Light_location'], L, L2, L3)
     glUniform4f(LIGTH_LOCATIONS['Light_diffuse'], *light_color)
     glUniform4f(LIGTH_LOCATIONS['Light_specular'], *light_color)
@@ -239,15 +269,17 @@ def play_background_music(music_path):
     pygame.mixer.init()
     pygame.mixer.music.load(music_path)
     pygame.mixer.music.play(-1)
+    # seta o volume 
+    pygame.mixer.music.set_volume(0)
 
 # Função para redimensionar a tela
 def resize(w, h):
-    glViewport(0, 0, w, h)
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(45, w / h, 0.1, 100.0)
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
+    glViewport(0, 0, w, h) # Define a área de visualização
+    glMatrixMode(GL_PROJECTION) # Define a matriz de projeção
+    glLoadIdentity() # Carrega a matriz identidade
+    gluPerspective(45, w / h, 0.1, 100.0) # Define a perspectiva
+    glMatrixMode(GL_MODELVIEW) # Define a matriz de visualização 
+    glLoadIdentity() # Carrega a matriz identidade
 
 def Keys(key, x, y):
 
@@ -256,13 +288,13 @@ def Keys(key, x, y):
     global T3, pulo
     
     if(key == b'a'): 
-        T -= 1
+        T -= .5
     elif(key == b'd'): 
-        T += 1
+        T += .5
     elif((key == b'w') and T2 <= 1) or (pulo == True and key == b'w'): 
-        T2 += 8
-        if pulo == True:
-            pulo = False
+        global Teclaw
+        Teclaw = True
+
     elif(key == b's'): 
         T2 -= 1
 
@@ -288,22 +320,40 @@ def KeysEspecial(key, x, y):
         L3 -= 1 
     elif(key == GLUT_KEY_PAGE_DOWN ): 
         L3 += 1         
-       
+
+i = 0
+VelocidadeX = .5
+
 def animacao(value):
     glutPostRedisplay()
     glutTimerFunc(30, animacao,1)
-    
+
     #colisao do chao
     # chao tem tamanho = 30
 
     global T, T2, T3, pulo
     global posChaoX, posCubeY, posCubeX, posCubeX2, posCubeY2
+    global Teclaw
+    global i
+    # aninimação de pulo
+    if Teclaw == True:
+        if i <=8    :
+            i += 0.5
+            T2 += 0.5
+            
+        elif pulo == True:
+            pulo = False
 
-    # limites laterais
-    if T <= -17:
-        T = -17
-    elif T >= 92:
-        T = 92
+        else:
+            i = 0
+            Teclaw = False
+
+    # # limites laterais
+    # if T <= -17:
+    #     T = -17
+    # elif T >= 92:
+    #     T = 92
+
     # Colisa com o chão
     if T > posChaoX -16 and T < posChaoX + 16:
         if T2 < 0.35:
@@ -316,16 +366,16 @@ def animacao(value):
             T2 = 0.35
 
     # Colisao com os cubos
-    if (T > posCubeX -2 and T < posCubeX + 2) and T2 >= posCubeY:
+    if (T > posCubeX -2 and T < posCubeX + 2) and T2 >= posCubeY+ 1:
         if T2 < posCubeY+1.5:
             T2 = posCubeY+1.5
             pulo = True
         
-    elif ( T > posCubeX+12 and T < posCubeX+16) and T2 >= posCubeY+7:
+    elif ( T > posCubeX+12 and T < posCubeX+16) and T2 >= posCubeY+8:
         if T2 < posCubeY+8.5:
             T2 = posCubeY+8.5
             pulo = True
-    elif (T > posCubeX+8 and T < posCubeX+20) and T2 >= posCubeY:
+    elif (T > posCubeX+8 and T < posCubeX+20) and T2 >= posCubeY+1:
         if T2 < posCubeY+1.5:
             T2 = posCubeY+1.5
             pulo = True
@@ -355,10 +405,24 @@ def animacao(value):
         if T2 < posCubeY2+9.5:
             T2 = posCubeY2+9.5
             pulo = True
-        
+    
+
+    # animando o inimigo
+    global Fx, Fy, Fz, VelocidadeX
+    # mantem o movimento em um intervalo 
+    if Fx >32:
+        VelocidadeX = -VelocidadeX
+    elif Fx < 17:
+        VelocidadeX = -VelocidadeX
+    Fx += VelocidadeX
+
+  
+
+
     #implementa gravidade
     if T2 > -3:
-        T2 -= 0.4
+        if Teclaw == False:
+            T2 -= 0.4
 
     if T2 <= -3: 
         print("you died")
@@ -367,7 +431,8 @@ def init():
 
     glClearColor (0.3, 0.3, 0.3, 0.0) # cor de fundo
     glShadeModel( GL_SMOOTH ) # tipo de sombreamento
-    glClearColor( 0.13, 0.41, 0.58, 1.0 ) # cor de fundo
+    glClearColor( 0, 0, 0, 1.0 ) # cor de fundo
+    # glClearColor( 0.13, 0.41, 0.58, 1.0 ) # cor de fundo
     
     glClearDepth( 1.0 ) # valor do z-buffer
     glEnable( GL_DEPTH_TEST ) # ativa o z-buffer
@@ -376,7 +441,7 @@ def init():
 
     glDepthFunc( GL_LEQUAL )
     glEnable( GL_DEPTH_TEST )
-    
+
     vertexShader = shaders.compileShader(open('shaders/main.vert', 'r').read(), GL_VERTEX_SHADER)
     fragmentShader = shaders.compileShader(open('shaders/main.frag', 'r').read(), GL_FRAGMENT_SHADER)
 
@@ -423,6 +488,7 @@ chaoCastelo = pywavefront.Wavefront("media/chaoCastelo.obj")
 caixa = pywavefront.Wavefront("media/caixaInterrogacao.obj")
 castelo = pywavefront.Wavefront("media/castelo.obj")
 bandeira = pywavefront.Wavefront("media/flag.obj")
+Freddy = pywavefront.Wavefront("media/Freddy.obj")
 
 # inicia a mudica de fundo
 play_background_music("media/Super Mario Bros. Soundtrack.mp3")

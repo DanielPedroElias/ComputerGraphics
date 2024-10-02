@@ -17,8 +17,6 @@ uniform vec4 Material_specular;     // Cor especular do material
 uniform vec4 Material_ambient;      // Cor ambiente do material
 uniform vec4 Material_diffuse;      // Cor difusa do material
 
-uniform vec4 position;      // posicão do objeto no espaço
-
 // Variáveis de entrada do shader
 in vec2 vST;  // Coordenadas de textura
 in vec3 vN;   // Vetor normal da superfície
@@ -48,5 +46,7 @@ void main() {
     float attenuation = 1.0 / (1.0 + 0.0001 * pow(length(vL), 2));
 
     // Combina iluminação com a cor escolhida
-    gl_FragColor = (ambient + attenuation * (diffuse + specular));
+   // gl_FragColor = (ambient + attenuation * (diffuse + specular));
+    gl_FragColor = ambient + diffuse + specular;
+
 }
