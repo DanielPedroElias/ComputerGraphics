@@ -23,6 +23,9 @@ pip install pyglet==1.5.27
 # Manipulation of arrays and high-performance numerical computation.
 pip install numpy==1.23
 
+pip install opencv-python
+pip install moviepy
+
 # Actual State
 
 ![image](https://github.com/user-attachments/assets/d32209d3-9f6c-487a-9575-c05cbabcc5d5)
