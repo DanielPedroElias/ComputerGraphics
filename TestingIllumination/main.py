@@ -14,6 +14,7 @@ from moviepy.editor import VideoFileClip # Importa a classe VideoFileClip da bib
 import pygame # Importa a biblioteca Pygame pra reproduzir música de fundo
 from OpenGL.GLUT.fonts import GLUT_BITMAP_HELVETICA_18 # Importa a constante GLUT_BITMAP_HELVETICA_18
 
+
 # Variáveis de movimentação e posição
 T, T2, T3 = 1, 1, 0  # Movimentação nos eixos X, Y e Z
 L, L2, L3 = 0.0, 20.0, 0.0  # Posição da luz
@@ -21,7 +22,6 @@ Fx, Fy, Fz = 18, 0, 0  # Posição do foco da luz
 Teclaw = False
 pulo = False
 
-pygame.mixer.
 # Variáveis de posição dos objetos
 # posição do chão
 posChaoX = -5
@@ -55,14 +55,16 @@ def display():
 
     # Movimenta a câmera
     global camx, camy, camz
-    
-    if T > camx + 12:
-        # if camx < 70000.0:
-        camx += 1
-    elif T < camx - 12:
-        # if camx > 5.0:
-        camx -= 1
-
+    global T, T2, T3
+    print(T)
+    if T > camx + 10:
+        if camx < 70.0:
+            if camx< camx+5:
+                camx += 5
+    elif T < camx - 10:
+        if camx > 5.0:
+            if camx > camx-5:
+                camx -= 5
     gluLookAt(camx, camy, camz, 
               camx, camy, 0.0, 
               0.0, 1.0, 0.0)
@@ -75,7 +77,7 @@ def display():
     glUseProgram(main_shader)
 
     corObj = (0.5, 0.0, 0.0, 1)  # Cor do objeto
-    corLuz = (0.75, 0.75, 0.75, 1.0)  # Cor da luz
+    corLuz = (0.9, 0.9, 0.9, 1.0)  # Cor da luz
     configurar_material(corObj)
     configurar_luz(L, L2, L3,corLuz)
 
@@ -144,12 +146,10 @@ def display():
     glUseProgram(0) # Desativa o shader
 
     # colisao do inimigo
-    if T >= Fx - 1 and T <= Fx + 1 and fds == True:
-        DesenhaTexto("Bateu no freddy", 0.0, 1.0)
+    if T >= Fx - 1 and T <= Fx + 1 and fds == True and T2 <= 2:
         fds = False
-        DesenhaVideo("a.mp4", Fx-4, 0, 6, 4)
-
-
+        play_music("media/Freddy.mp3", 1, 1)    
+        DesenhaVideo("media/explosion.mp4", Fx-4, 0, 6, 4)
 
     # Desenha os eixos de coordenadas
     #desenhar_eixos()
@@ -159,21 +159,23 @@ def display():
     # Dentro da função display (onde ocorre a colisão com o castelo)
     if (T > posCastlex - 5 and T < posCastlex + 5) and controle == 0:
         controle = 1
-        play_video("media/conquista.mp4")  # Agora usa a função que executa o vídeo em um processo paralelo
+        T = T
+        play_music("media/conquista.mp3", 1, 1)  # Toca a música de conquista
+        # Rotaciona a matriz para ajustar o vídeo (180 graus)
+        glPushMatrix()  # Salva o estado atual da matriz
+        glTranslatef(posCastlex, 4 + 4, 0)  # Centraliza a rotação no meio do vídeo
+        glRotatef(180, 0, 0, 1)  # Rotaciona 180 graus
+        glTranslatef(-posCastlex, -(4 + 4), 0)  # Restaura a posição original
+
+        # Executa o vídeo de conquista
+        DesenhaVideo("media/conquista.mp4", posCastlex-4, 4, 8, 8)
+
+        glPopMatrix()  # Restaura o estado da matriz
 
     
 
     glutSwapBuffers()
     
-# Função para desenhar texto na tela
-def DesenhaTexto(text, x, y, font=GLUT_BITMAP_HELVETICA_18):
-    glPushMatrix() # Salva a matriz de transformação atual
-    glRasterPos2f(x, y)  # Define a posição do texto
-    # para cada caractere no texto
-    for ch in text:
-        glutBitmapCharacter(font, ord(ch))  # Desenha cada caractere do texto
-    glPopMatrix() # Restaura a matriz de transformação anterior
-
 def CarregaTexturaDoFrame(frame):
     # Converte o frame para uma textura OpenGL
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -217,7 +219,7 @@ def DesenhaVideo(arquivo_video, x, y, largura, altura):
         glPushMatrix()  # Salva a matriz de transformação atual
 
         # Define a posição do quadrilátero na tela
-        glTranslatef(x, y, 0)
+        glTranslatef(x, y, 1)
 
         # Desenha o quadrilátero com a textura do frame do vídeo
         glBegin(GL_QUADS)
@@ -239,6 +241,16 @@ def DesenhaVideo(arquivo_video, x, y, largura, altura):
         cv2.waitKey(30)
 
     video.release()  # Libera o vídeo após terminar
+
+# Função para desenhar texto na tela
+def DesenhaTexto(text, x, y, font=GLUT_BITMAP_HELVETICA_18):
+    glPushMatrix() # Salva a matriz de transformação atual
+    glRasterPos2f(x, y)  # Define a posição do texto
+    # para cada caractere no texto
+    for ch in text:
+        glutBitmapCharacter(font, ord(ch))  # Desenha cada caractere do texto
+    glPopMatrix() # Restaura a matriz de transformação anterior
+
 # Função para desenhar o objeto utilizando o shader
 def obj_draw_shader(objeto):
     objs = list(objeto.materials.keys())
@@ -317,31 +329,27 @@ def configurar_material(cor):
     glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)
 
 # Função para configurar as luzes
-def configurar_luz(L, L2, L3, light_color):
+def configurar_luz(L, L2, L3, corLuz):
     glUniform4f(LIGTH_LOCATIONS['Global_ambient'], 0.1, 0.1, 0.1, 1.0)
-    glUniform4f( LIGTH_LOCATIONS['Light_ambient'], 0.2, 0.2, 0.2, 1.0 )
     glUniform3f(LIGTH_LOCATIONS['Light_location'], L, L2, L3)
-    glUniform4f(LIGTH_LOCATIONS['Light_diffuse'], *light_color)
-    glUniform4f(LIGTH_LOCATIONS['Light_specular'], *light_color)
+    glUniform4f(LIGTH_LOCATIONS['Light_ambient'], 0.2, 0.2, 0.2, 1.0 )
+    glUniform4f(LIGTH_LOCATIONS['Light_diffuse'], *corLuz)
+    glUniform4f(LIGTH_LOCATIONS['Light_specular'], *corLuz)
 
 # Desenha múltiplos cubos em linha
 def desenhaCubes(posx, posy, quantidade):
     for i in range(quantidade):
         desenhar_cubo(posx + (i + i), posy, cube)
 
-# Função que reproduz o vídeo
-def play_video(video_path):
-    video = VideoFileClip(video_path)
-    video.preview()
-
 # Função para tocar música de fundo 
-def play_background_music(music_path):
+def play_music(music_path, channel, volume):
     pygame.mixer.init()
-    pygame.mixer.music.load(music_path)
-    pygame.mixer.music.play(-1)
+    pygame.mixer.Channel(2)
+    sound = pygame.mixer.Sound(music_path)
+    sound_channel = pygame.mixer.Channel(channel)
+    sound_channel.play(sound, loops=0)
     # seta o volume 
-    pygame.mixer.music.set_volume(0 )
-
+    sound_channel.set_volume(volume)
 # Função para redimensionar a tela
 def resize(w, h):
     glViewport(0, 0, w, h) # Define a área de visualização
@@ -408,9 +416,9 @@ def animacao(value):
     # aninimação de pulo
     if Teclaw == True:
         if i <=8    :
-            i += 0.5
-            T2 += 0.5
-            
+            i += 1
+            T2 += 1
+
         elif pulo == True:
             pulo = False
 
@@ -418,11 +426,11 @@ def animacao(value):
             i = 0
             Teclaw = False
 
-    # # limites laterais
-    # if T <= -17:
-    #     T = -17
-    # elif T >= 92:
-    #     T = 92
+    # limites laterais
+    if T <= -17:
+        T = -17
+    elif T >= 92:
+        T = 92
 
     # Colisa com o chão
     if T > posChaoX -16 and T < posChaoX + 16:
@@ -486,9 +494,6 @@ def animacao(value):
         VelocidadeX = -VelocidadeX
     Fx += VelocidadeX
 
-  
-
-
     #implementa gravidade
     if T2 > -3:
         if Teclaw == False:
@@ -501,8 +506,8 @@ def init():
 
     glClearColor (0.3, 0.3, 0.3, 0.0) # cor de fundo
     glShadeModel( GL_SMOOTH ) # tipo de sombreamento
-    glClearColor( 0, 0, 0, 1.0 ) # cor de fundo
-    # glClearColor( 0.13, 0.41, 0.58, 1.0 ) # cor de fundo
+    #glClearColor( 0, 0, 0, 1.0 ) # cor de fundo
+    glClearColor( 0.13, 0.41, 0.58, 1.0 ) # cor de fundo
     
     glClearDepth( 1.0 ) # valor do z-buffer
     glEnable( GL_DEPTH_TEST ) # ativa o z-buffer
@@ -561,7 +566,7 @@ bandeira = pywavefront.Wavefront("media/flag.obj")
 Freddy = pywavefront.Wavefront("media/Freddy.obj")
 
 # inicia a mudica de fundo
-play_background_music("media/Super Mario Bros. Soundtrack.mp3")
+play_music("media/Super Mario Bros. Soundtrack.mp3", 0, 0)
 
 glutDisplayFunc(display)
 glutReshapeFunc(resize)
