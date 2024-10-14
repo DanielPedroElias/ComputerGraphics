@@ -46,7 +46,7 @@ void main() {
     float attenuation = 1.0 / (1.0 + 0.0001 * pow(length(vL), 2));
 
     // Combina iluminação com a cor escolhida
-   // gl_FragColor = (ambient + attenuation * (diffuse + specular));
+    gl_FragColor = (ambient + attenuation * (diffuse + specular));
     gl_FragColor = ambient + diffuse + specular;
 
 }

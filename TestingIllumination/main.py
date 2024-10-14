@@ -1,18 +1,20 @@
 
 # Importações necessárias
+import pywavefront # Importa a biblioteca PyWavefront pra carregar objetos 3D
+import numpy as np # Importa a biblioteca NumPy pra trabalhar com arrays
+import cv2  # Usando OpenCV para carregar e ler o vídeo
+import pygame # Importa a biblioteca Pygame pra reproduzir música de fundo
+
 from OpenGL.GL import * # Importa todas as funções do OpenGL
 from OpenGL.GLU import * # Importa todas as funções do OpenGL Utility Library pra criar a câmera
 from OpenGL.GLUT import * # Importa todas as funções do OpenGL Utility Toolkit pra criar a janela
-import pywavefront # Importa a biblioteca PyWavefront pra carregar objetos 3D
 from pywavefront import visualization  # Importa a função visualization da biblioteca PyWavefront pra visualizar os objetos 3D
-import numpy as np # Importa a biblioteca NumPy pra trabalhar com arrays
 from OpenGL.arrays import vbo # Importa a classe vbo pra trabalhar com Vertex Buffer Objects
 from OpenGL.GL import shaders # Importa a classe shaders pra trabalhar com shaders
-import cv2  # Usando OpenCV para carregar e ler o vídeo
-
 from moviepy.editor import VideoFileClip # Importa a classe VideoFileClip da biblioteca MoviePy pra reproduzir vídeos
-import pygame # Importa a biblioteca Pygame pra reproduzir música de fundo
 from OpenGL.GLUT.fonts import GLUT_BITMAP_HELVETICA_18 # Importa a constante GLUT_BITMAP_HELVETICA_18
+from PIL import Image # Importa a classe Image da biblioteca PIL pra trabalhar com imagens
+
 
 
 # Variáveis de movimentação e posição
@@ -47,6 +49,50 @@ camx, camy, camz = 5.0, 10.0, 30.0  # Posição da câmera
 controle = 0
 
 fds = True
+
+# Função para desenhar um objeto com shader e textura (se fornecida)
+def obj_draw_shaderTexture(objeto, shader_program, texture_ID=None):
+    objs = list(objeto.materials.keys())    # Pega o primeiro material do objeto
+    vertices = objeto.materials[objs[0]].vertices
+    vertices = np.array(vertices, dtype=np.float32).reshape(-1, 8)  # Assumindo que temos tex_2, vn_3, v_3
+    vbo_objeto = vbo.VBO(vertices)
+
+    # Liga o VBO
+    vbo_objeto.bind()
+
+    # Ativa os estados necessários para usar os dados de vértices, normais e coordenadas de textura
+    glEnableClientState(GL_VERTEX_ARRAY)
+    glEnableClientState(GL_NORMAL_ARRAY)
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+
+    # Define os ponteiros para os dados de vértices, normais e coordenadas de textura
+    glVertexPointer(3, GL_FLOAT, 32, vbo_objeto + 20)  # 3 floats para os vértices (posição)
+    glNormalPointer(GL_FLOAT, 32, vbo_objeto + 8)      # 3 floats para as normais
+    glTexCoordPointer(2, GL_FLOAT, 32, vbo_objeto)     # 2 floats para coordenadas de textura
+
+    # Se houver uma textura, ativa e aplica
+    if texture_ID is not None:
+        glActiveTexture(GL_TEXTURE0)
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, texture_ID)
+        glUniform1i(glGetUniformLocation(shader_program, 'tex'), 0)
+
+    # Ativa o shader
+    glUseProgram(shader_program)
+
+    # Desenha o objeto
+    glDrawArrays(GL_TRIANGLES, 0, vertices.shape[0])
+
+    # Desativa o shader e estados
+    glUseProgram(0)
+    glDisableClientState(GL_VERTEX_ARRAY)
+    glDisableClientState(GL_NORMAL_ARRAY)
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+
+    # Desvincula o VBO
+    vbo_objeto.unbind()
+
+
 # Função display para renderização
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -56,12 +102,11 @@ def display():
     # Movimenta a câmera
     global camx, camy, camz
     global T, T2, T3
-    print(T)
-    if T > camx + 10:
+    if T > camx + 5:
         if camx < 70.0:
             if camx< camx+5:
-                camx += 5
-    elif T < camx - 10:
+                camx += 1
+    elif T < camx - 5:
         if camx > 5.0:
             if camx > camx-5:
                 camx -= 5
@@ -74,6 +119,7 @@ def display():
     glPushMatrix()
     glTranslatef(T, T2, T3)
     glScalef(0.5, 0.5, 0.5)
+    
     glUseProgram(main_shader)
 
     corObj = (0.5, 0.0, 0.0, 1)  # Cor do objeto
@@ -81,7 +127,7 @@ def display():
     configurar_material(corObj)
     configurar_luz(L, L2, L3,corLuz)
 
-    obj_draw_shader(mario)
+    obj_draw_shaderTexture(mario, main_shader, mario_ID)
     glPopMatrix()
 
     # Desenha o cubo
@@ -112,39 +158,22 @@ def display():
     desenhar_chao(posChaoX2, chaoCastelo)
 
     # Desenha o castelo
-    glPushMatrix()
-    glTranslatef(posCastlex, -0.1, -9)
-    glScalef(.3, .3, .3)
-    glUseProgram(main_shader)
-    corCastelo = (1.0, 0.5, 0.0, 1.0)  # Laranja (RGB: 255, 127, 0)    
-    configurar_material(corCastelo)
-    obj_draw_shader(castelo)
-    glPopMatrix()
+    desenhaCastelo()
 
     # Desenha a bandeira
-    glPushMatrix()
-    glTranslatef(posBandeira, 0, 0)
-    glUseProgram(main_shader)
-    corBandeira = (1.0, 1.0, 1.0, 1.0)
-    configurar_material(corBandeira)
-    obj_draw_shader(bandeira)
-    glPopMatrix()
+    desenhaBandera()
 
     # Desenha a esfera de luz
     desenhar_esfera(L, L2, L3, corLuz)
+
     global fds 
     if fds == True:
         # desenha o inimigo
-        glPushMatrix()
-        glTranslatef(Fx, Fy, Fz)
-        glUseProgram(main_shader)
-        corInimigo = (1.0, 1.0, 0.0, 1.0)
-        configurar_material(corInimigo)
-        obj_draw_shader(Freddy)
-        glPopMatrix()
+        desenhaInimigo()
 
     glUseProgram(0) # Desativa o shader
 
+    
     # colisao do inimigo
     if T >= Fx - 1 and T <= Fx + 1 and fds == True and T2 <= 2:
         fds = False
@@ -175,7 +204,35 @@ def display():
     
 
     glutSwapBuffers()
-    
+
+def desenhaInimigo():
+        glPushMatrix()
+        glTranslatef(Fx, Fy, Fz)
+        glUseProgram(main_shader)
+        corInimigo = (1.0, 1.0, 0.0, 1.0)
+        configurar_material(corInimigo)
+        obj_draw_shader(Freddy)
+        glPopMatrix()
+
+def desenhaBandera():
+    glPushMatrix()
+    glTranslatef(posBandeira, 0, 0)
+    glUseProgram(main_shader)
+    corBandeira = (1.0, 1.0, 1.0, 1.0)
+    configurar_material(corBandeira)
+    obj_draw_shader(bandeira)
+    glPopMatrix()
+
+def desenhaCastelo():
+    glPushMatrix()
+    glTranslatef(posCastlex, -0.1, -9)
+    glScalef(.3, .3, .3)
+    glUseProgram(main_shader)
+    corCastelo = (1.0, 0.5, 0.0, 1.0)  # Laranja (RGB: 255, 127, 0)    
+    configurar_material(corCastelo)
+    obj_draw_shaderTexture(castelo, main_shader)
+    glPopMatrix()
+
 def CarregaTexturaDoFrame(frame):
     # Converte o frame para uma textura OpenGL
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -285,7 +342,7 @@ def desenhar_chao(posx, objeto):
     glUseProgram(main_shader)
     corChao = (0.5, .3, 0.1, 1)
     configurar_material(corChao)
-    obj_draw_shader(objeto)
+    obj_draw_shaderTexture(objeto, main_shader, chao_ID)
     glPopMatrix()
 
 # Função para desenhar a esfera representando a luz
@@ -323,16 +380,16 @@ def desenhar_eixos():
 
 # Função para configurar os materiais (cor, brilho, etc.)
 def configurar_material(cor):
-    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], .1, .1, .1, 1.0)
+    glUniform4f(LIGTH_LOCATIONS['Material_ambient'], 0, 0, 0, 1.0)
     glUniform4f(LIGTH_LOCATIONS['Material_diffuse'], *cor)
     glUniform4f(LIGTH_LOCATIONS['Material_specular'], 0.9, 0.9, 0.9, 1)
     glUniform1f(LIGTH_LOCATIONS['Material_shininess'], 0.6 * 128.0)
 
 # Função para configurar as luzes
 def configurar_luz(L, L2, L3, corLuz):
-    glUniform4f(LIGTH_LOCATIONS['Global_ambient'], 0.1, 0.1, 0.1, 1.0)
+    glUniform4f(LIGTH_LOCATIONS['Global_ambient'], 0, 0, 0, 1.0)
     glUniform3f(LIGTH_LOCATIONS['Light_location'], L, L2, L3)
-    glUniform4f(LIGTH_LOCATIONS['Light_ambient'], 0.2, 0.2, 0.2, 1.0 )
+    glUniform4f(LIGTH_LOCATIONS['Light_ambient'], 0, 0, 0, 1.0 )
     glUniform4f(LIGTH_LOCATIONS['Light_diffuse'], *corLuz)
     glUniform4f(LIGTH_LOCATIONS['Light_specular'], *corLuz)
 
@@ -502,71 +559,92 @@ def animacao(value):
     if T2 <= -3: 
         print("you died")
     
+# Função de inicialização (setup inicial)
 def init():
+    glClearColor(0.3, 0.3, 0.3, 0.0)
+    glShadeModel(GL_SMOOTH)
+    glEnable(GL_DEPTH_TEST)
 
-    glClearColor (0.3, 0.3, 0.3, 0.0) # cor de fundo
-    glShadeModel( GL_SMOOTH ) # tipo de sombreamento
-    #glClearColor( 0, 0, 0, 1.0 ) # cor de fundo
-    glClearColor( 0.13, 0.41, 0.58, 1.0 ) # cor de fundo
-    
-    glClearDepth( 1.0 ) # valor do z-buffer
-    glEnable( GL_DEPTH_TEST ) # ativa o z-buffer
-    glDepthFunc( GL_LEQUAL ) # tipo de teste do z-buffer
-    glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST ) # correcao de perspectiva
-
-    glDepthFunc( GL_LEQUAL )
-    glEnable( GL_DEPTH_TEST )
-
+    # Carrega e compila shaders
     vertexShader = shaders.compileShader(open('shaders/main.vert', 'r').read(), GL_VERTEX_SHADER)
     fragmentShader = shaders.compileShader(open('shaders/main.frag', 'r').read(), GL_FRAGMENT_SHADER)
 
     global main_shader
     main_shader = glCreateProgram()
-    glAttachShader(main_shader, vertexShader) 
+    glAttachShader(main_shader, vertexShader)
     glAttachShader(main_shader, fragmentShader)
     glLinkProgram(main_shader)
-    
+
+    # Define variáveis de iluminação no shader
     global LIGTH_LOCATIONS
     LIGTH_LOCATIONS = {
-        'Global_ambient': glGetUniformLocation( main_shader, 'Global_ambient' ),
-        'Light_ambient': glGetUniformLocation( main_shader, 'Light_ambient' ),
-        'Light_diffuse': glGetUniformLocation( main_shader, 'Light_diffuse' ),
-        'Light_location': glGetUniformLocation( main_shader, 'Light_location' ),
-        'Light_specular': glGetUniformLocation( main_shader, 'Light_specular' ),
-        'Material_ambient': glGetUniformLocation( main_shader, 'Material_ambient' ),
-        'Material_diffuse': glGetUniformLocation( main_shader, 'Material_diffuse' ),
-        'Material_shininess': glGetUniformLocation( main_shader, 'Material_shininess' ),
-        'Material_specular': glGetUniformLocation( main_shader, 'Material_specular' ),
-        'Object_color': glGetUniformLocation(main_shader, 'Object_color')
-
-    }   
-    
-    global ATTR_LOCATIONS
-    ATTR_LOCATIONS = {
-        'Vertex_position': glGetAttribLocation( main_shader, 'Vertex_position' ),
-        'Vertex_normal': glGetAttribLocation( main_shader, 'Vertex_normal' )
+        'Global_ambient': glGetUniformLocation(main_shader, 'Global_ambient'),
+        'Light_ambient': glGetUniformLocation(main_shader, 'Light_ambient'),
+        'Light_diffuse': glGetUniformLocation(main_shader, 'Light_diffuse'),
+        'Light_location': glGetUniformLocation(main_shader, 'Light_location'),
+        'Light_specular': glGetUniformLocation(main_shader, 'Light_specular'),
+        'Material_ambient': glGetUniformLocation(main_shader, 'Material_ambient'),
+        'Material_diffuse': glGetUniformLocation(main_shader, 'Material_diffuse'),
+        'Material_shininess': glGetUniformLocation(main_shader, 'Material_shininess'),
+        'Material_specular': glGetUniformLocation(main_shader, 'Material_specular'),
     }
-    
+
+    global TEX_LOCATIONS
+    TEX_LOCATIONS = {
+        'tex': glGetAttribLocation(main_shader, 'tex')
+    }
+
+    # Carregar a textura do Mario
+    global mario_ID
+    mario_img = Image.open('texturas/mario.png')
+    w, h, mario_img = mario_img.size[0], mario_img.size[1], mario_img.tobytes("raw", "RGB", 0, -1)
+    mario_ID = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, mario_ID)
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, w, h, GL_RGB, GL_UNSIGNED_BYTE, mario_img)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    global chao_ID
+    chao_img = Image.open('texturas/chao.png')
+    w, h, chao_img = chao_img.size[0], chao_img.size[1], chao_img.tobytes("raw", "RGB", 0, -1)
+    chao_ID = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, chao_ID)
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, w, h, GL_RGB, GL_UNSIGNED_BYTE, chao_img)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    global castelo_ID
+    castelo_img = Image.open('texturas/castelo.png')
+    w, h, castelo_img = castelo_img.size[0], castelo_img.size[1], castelo_img.tobytes("raw", "RGB", 0, -1)
+    castelo_ID = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, castelo_ID)
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, w, h, GL_RGB, GL_UNSIGNED_BYTE, castelo_img)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+
+
+
 glutInit()
 glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB)
 glutInitWindowSize(1920, 1080)
 glutInitWindowPosition(100, 100)
-wind = glutCreateWindow("Cubo")
+wind = glutCreateWindow("Super Mario 100% Original")
 
 init()
 
 # Carrega os objetos 3D
-mario = pywavefront.Wavefront("media/mario.obj")
-cube = pywavefront.Wavefront("media/cube.obj")
-chao = pywavefront.Wavefront("media/chao.obj")
-chaoCastelo = pywavefront.Wavefront("media/chaoCastelo.obj")
-caixa = pywavefront.Wavefront("media/caixaInterrogacao.obj")
-castelo = pywavefront.Wavefront("media/castelo.obj")
-bandeira = pywavefront.Wavefront("media/flag.obj")
-Freddy = pywavefront.Wavefront("media/Freddy.obj")
+mario = pywavefront.Wavefront("objetos/mario.obj")
+cube = pywavefront.Wavefront("objetos/cube.obj")
+chao = pywavefront.Wavefront("objetos/chao.obj")
+chaoCastelo = pywavefront.Wavefront("objetos/chaoCastelo.obj")
+caixa = pywavefront.Wavefront("objetos/caixaInterrogacao.obj")
+castelo = pywavefront.Wavefront("objetos/castelo.obj")
+bandeira = pywavefront.Wavefront("objetos/flag.obj")
+Freddy = pywavefront.Wavefront("objetos/Freddy.obj")
 
 # inicia a mudica de fundo
-play_music("media/Super Mario Bros. Soundtrack.mp3", 0, 0)
+play_music("media/Super Mario Bros. Soundtrack.mp3", 0, 1)
 
 glutDisplayFunc(display)
 glutReshapeFunc(resize)
