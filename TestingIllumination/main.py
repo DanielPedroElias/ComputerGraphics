@@ -19,7 +19,7 @@ from PIL import Image # Importa a classe Image da biblioteca PIL pra trabalhar c
 
 # Variáveis de movimentação e posição
 T, T2, T3 = 1, 1, 0  # Movimentação nos eixos X, Y e Z
-L, L2, L3 = 0.0, 20.0, -25.0  # Posição da luz
+L, L2, L3 = -24.0, 15.0, -48.0  # Posição da luz
 Fx, Fy, Fz = 18, 0, 0  # Posição do foco da luz
 Teclaw = False
 pulo = False
@@ -57,6 +57,10 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
+
+    print("valor de L: ", L)
+    print("valor de L2: ", L2)
+    print("valor de L3: ", L3)
 
     # Movimenta a câmera
     global camx, camy, camz
@@ -130,6 +134,15 @@ def display():
         # desenha o inimigo
         desenhaInimigo()
 
+     #desenha fundo de tela
+    glPushMatrix()
+    glTranslatef(0, 0, -20)
+    glUseProgram(main_shader)
+
+    obj_draw_shaderTexture(fundo, main_shader, fundo_ID)
+
+    glPopMatrix()
+
     glUseProgram(0) # Desativa o shader
 
     
@@ -160,7 +173,7 @@ def display():
 
         glPopMatrix()  # Restaura o estado da matriz
 
-    
+   
 
     glutSwapBuffers()
 
@@ -287,7 +300,7 @@ def obj_draw_shaderTexture(objeto, shader_program, texture_ID=None):
 
     # Desvincula o VBO
     vbo_objeto.unbind()
-    
+
 # Função para configurar os materiais (cor, brilho, etc.)
 def configurar_material(cor):
     glUniform4f(LIGTH_LOCATIONS['Material_ambient'], 0, 0, 0, 1.0)
@@ -668,6 +681,16 @@ def init():
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
+    global fundo_ID
+    fundo_img = Image.open('texturas/fundo.png')
+    w, h, fundo_img = fundo_img.size[0], fundo_img.size[1], fundo_img.tobytes("raw", "RGB", 0, -1)
+    fundo_ID = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, fundo_ID)
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, w, h, GL_RGB, GL_UNSIGNED_BYTE, fundo_img)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    
+
 
 
 
@@ -691,6 +714,7 @@ caixa = pywavefront.Wavefront("objetos/caixaInterrogacao.obj")
 castelo = pywavefront.Wavefront("objetos/castelo.obj")
 bandeira = pywavefront.Wavefront("objetos/flag.obj")
 Freddy = pywavefront.Wavefront("objetos/Freddy.obj")
+fundo = pywavefront.Wavefront("objetos/fundo.obj")
 
 # inicia a mudica de fundo
 play_music("media/Super Mario Bros. Soundtrack.mp3", 0, 1)
