@@ -230,7 +230,7 @@ def desenhaCastelo():
     glUseProgram(main_shader)
     corCastelo = (1.0, 0.5, 0.0, 1.0)  # Laranja (RGB: 255, 127, 0)    
     configurar_material(corCastelo)
-    obj_draw_shaderTexture(castelo, main_shader)
+    obj_draw_shaderTexture(castelo, main_shader, castelo_ID)
     glPopMatrix()
 
 def CarregaTexturaDoFrame(frame):
