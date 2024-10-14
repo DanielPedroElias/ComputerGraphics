@@ -45,6 +45,12 @@ posBandeira = 70
 
 camx, camy, camz = 5.0, 10.0, 30.0  # Posição da câmera
 
+# controles da camera
+
+CRota = 0
+CRota2 = 5
+CRota3 = 0
+  
 # variavel pra controlar a reprodução do video
 controle = 0
 
@@ -450,6 +456,21 @@ def Keys(key, x, y):
         T3 -= 1
     elif(key == b'e'): 
         T3 += 1
+
+    global camx, camy, camz, CRota
+     # movimento da camera
+    if (key == b'i'):
+        camz -= 1
+    elif (key == b'k'):
+        camz += 1
+    elif (key == b'j'):
+        camx -= 1
+    elif (key == b'l'):
+        camx += 1
+    elif (key == b'u'):
+        camy -= 1
+    elif (key == b'o'):
+        camy += 1
     
 def KeysEspecial(key, x, y):
     global L
