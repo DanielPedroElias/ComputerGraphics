@@ -1,4 +1,5 @@
-#version 330 compatibility
+// Main.frag
+#version 330 compatibility 
 
 
 uniform vec4 Global_ambient;

@@ -1,3 +1,4 @@
+//main.vert
 #version 330 compatibility
 
 uniform vec3 Light_location;
