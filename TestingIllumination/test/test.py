@@ -240,7 +240,7 @@ def animacao(value):
 
 # Função de inicialização (setup inicial)
 def init():
-    glClearColor(0.3, 0.3, 0.3, 0.0)
+    glClearColor(0,0,0, 0.0)
     glShadeModel(GL_SMOOTH)
     glEnable(GL_DEPTH_TEST)
 
@@ -273,15 +273,15 @@ def init():
         'tex': glGetAttribLocation(carro_shader, 'tex')
     }
 
-    # Carregar a textura do Mario
-    global mario_ID
-    mario_img = Image.open('mario.png')
-    w, h, mario_img = mario_img.size[0], mario_img.size[1], mario_img.tobytes("raw", "RGB", 0, -1)
-    mario_ID = glGenTextures(1)
-    glBindTexture(GL_TEXTURE_2D, mario_ID)
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, w, h, GL_RGB, GL_UNSIGNED_BYTE, mario_img)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    # # Carregar a textura do Mario
+    # global mario_ID
+    # mario_img = Image.open('mario.png')
+    # w, h, mario_img = mario_img.size[0], mario_img.size[1], mario_img.tobytes("raw", "RGB", 0, -1)
+    # mario_ID = glGenTextures(1)
+    # glBindTexture(GL_TEXTURE_2D, mario_ID)
+    # gluBuild2DMipmaps(GL_TEXTURE_2D, 3, w, h, GL_RGB, GL_UNSIGNED_BYTE, mario_img)
+    # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
+    # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     
 
 glutInit()

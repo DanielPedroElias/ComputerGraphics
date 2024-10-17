@@ -14,29 +14,32 @@ from moviepy.editor import VideoFileClip # Importa a classe VideoFileClip da bib
 from OpenGL.GLUT.fonts import GLUT_BITMAP_HELVETICA_18 # Importa a constante GLUT_BITMAP_HELVETICA_18
 from PIL import Image # Importa a classe Image da biblioteca PIL pra trabalhar com imagens
 
+import threading # Importa a biblioteca threading pra trabalhar com threads
+import queue # Importa a biblioteca queue pra trabalhar com filas
+import cv2 # Importa a biblioteca cv2 pra trabalhar com OpenCV
+import time # Importa a biblioteca time pra trabalhar com tempo
 
+# Fila para armazenar os frames do vídeo
+frame_queue = queue.Queue()
 
 
 # Variáveis de movimentação e posição
 T, T2, T3 = 1, 1, 0  # Movimentação nos eixos X, Y e Z
 L, L2, L3 = -24.0, 15.0, -48.0  # Posição da luz
-Fx, Fy, Fz = 18, 0, 0  # Posição do foco da luz
+Fx, Fy, Fz = 18, 0, 0  # Posição do freddy da luz
+
+# Variáveis para controlar o pulo
 Teclaw = False
 pulo = False
 
 # Variáveis de posição dos objetos
-# posição do chão
-posChaoX = -5
-
-# posição do cubo
+posChaoX = -5# posição do chão
+# posição do cubo 
 posCubeX, posCubeY = -5, 7
-
 # posição do cubo 2 (para fazer a escada)
 posCubeX2, posCubeY2 = 36, 0.9
-
 # posição do chao do castelo
 posChaoX2 = 80
-
 # posição do castelo
 posCastlex = 85
 
@@ -46,7 +49,6 @@ posBandeira = 70
 camx, camy, camz = 5.0, 10.0, 30.0  # Posição da câmera
 
 # controles da camera
-
 CRota = 0
 CRota2 = 5
 CRota3 = 0
@@ -54,7 +56,7 @@ CRota3 = 0
 # variavel pra controlar a reprodução do video
 controle = 0
 
-fds = True
+CtrlFreeddy = True
 
 
 # Função display para renderização
@@ -63,10 +65,6 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-
-    print("valor de L: ", L)
-    print("valor de L2: ", L2)
-    print("valor de L3: ", L3)
 
     # Movimenta a câmera
     global camx, camy, camz
@@ -135,8 +133,8 @@ def display():
     # Desenha a esfera de luz
     desenhar_esfera(L, L2, L3, corLuz)
 
-    global fds 
-    if fds == True:
+    global CtrlFreeddy 
+    if CtrlFreeddy == True:
         # desenha o inimigo
         desenhaInimigo()
 
@@ -152,17 +150,21 @@ def display():
     glUseProgram(0) # Desativa o shader
 
     
+    if not frame_queue.empty():
+        desenhar_proximo_frame_video(Fx - 4, 0, 1, 6, 4)
     # colisao do inimigo
-    if T >= Fx - 1 and T <= Fx + 1 and fds == True and T2 <= 2:
-        fds = False
+    if T >= Fx - 1 and T <= Fx + 1 and CtrlFreeddy == True and T2 <= 2:
+        CtrlFreeddy = False
         play_music("media/Freddy.mp3", 1, 1)    
-        DesenhaVideo("media/explosion.mp4", Fx-4, 0, 6, 4)
+        iniciar_video("media/explosion.mp4")
 
     # Desenha os eixos de coordenadas
     #desenhar_eixos()
 
     # colisão com o castelo
     global controle
+    if not frame_queue.empty():
+        desenhar_proximo_frame_video(posCastlex - 4, 4,0, 8,8 )
     # Dentro da função display (onde ocorre a colisão com o castelo)
     if (T > posCastlex - 5 and T < posCastlex + 5) and controle == 0:
         controle = 1
@@ -175,7 +177,7 @@ def display():
         glTranslatef(-posCastlex, -(4 + 4), 0)  # Restaura a posição original
 
         # Executa o vídeo de conquista
-        DesenhaVideo("media/conquista.mp4", posCastlex-4, 4, 8, 8)
+        iniciar_video("media/conquista.mp4")
 
         glPopMatrix()  # Restaura o estado da matriz
 
@@ -183,7 +185,51 @@ def display():
 
     glutSwapBuffers()
 
+# Função para rodar o vídeo em uma thread separada e carregar os frames na fila
+def carregar_video(arquivo_video):
+    video = cv2.VideoCapture(arquivo_video) # Abre o vídeo
 
+    if not video.isOpened():
+        print("Erro ao abrir o vídeo.") # Exibe uma mensagem de erro se o vídeo não puder ser aberto
+        return
+
+    while video.isOpened(): # Enquanto o vídeo estiver aberto
+        ret, frame = video.read() # Lê o próximo frame do vídeo
+        if not ret: # Se não houver mais frames, encerra o loop
+            break # Encerra o loop
+        if frame_queue.qsize() < 10:  # Limita o tamanho da fila para evitar overflow
+            frame_queue.put(frame) # Adiciona o frame à fila
+        time.sleep(1 / video.get(cv2.CAP_PROP_FPS))  # Mantém o framerate
+
+    video.release() # Libera o vídeo
+
+# Função para desenhar o frame mais recente da fila
+def desenhar_proximo_frame_video(x, y, z, largura, altura):
+    if frame_queue.empty(): 
+        return  # Se não houver frames, não faz nada
+
+    frame = frame_queue.get()  # Obtém o próximo frame da fila
+    textura_id = CarregaTexturaDoFrame(frame)
+
+    glEnable(GL_TEXTURE_2D) # Habilita o uso de texturas
+    glBindTexture(GL_TEXTURE_2D, textura_id) # Define a textura a ser usada
+
+    glPushMatrix() # Salva a matriz de transformação atual
+    glTranslatef(x, y, z) # Translada o vídeo para a posição desejada
+    glBegin(GL_QUADS) # Desenha um quadrado
+    glTexCoord2f(0.0, 0.0); glVertex2f(0, 0) # Define as coordenadas de textura e vértices
+    glTexCoord2f(1.0, 0.0); glVertex2f(largura, 0) # Define as coordenadas de textura e vértices
+    glTexCoord2f(1.0, 1.0); glVertex2f(largura, altura) # Define as coordenadas de textura e vértices
+    glTexCoord2f(0.0, 1.0); glVertex2f(0, altura) # Define as coordenadas de textura e vértices
+    glEnd() # Finaliza o desenho do quadrado
+    glPopMatrix() # Restaura a matriz de transformação anterior
+ 
+    glDeleteTextures([textura_id]) # Deleta a textura para liberar memória
+
+# Inicia a thread de leitura de vídeo quando necessário
+def iniciar_video(arquivo_video):
+    video_thread = threading.Thread(target=carregar_video, args=(arquivo_video,)) # Cria uma nova thread para carregar o vídeo
+    video_thread.start() # Inicia a thread
 
 def CarregaTexturaDoFrame(frame):
     # Converte o frame para uma textura OpenGL
@@ -195,75 +241,15 @@ def CarregaTexturaDoFrame(frame):
     glBindTexture(GL_TEXTURE_2D, textura_id)
 
     # Definir parâmetros de textura
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) # Define o modo de repetição da textura
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) # Define o modo de repetição da textura
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) # Define o filtro de textura para redução
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) # Define o filtro de textura para ampliação
 
     # Transferir os dados do frame para a textura
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, largura, altura, 0, GL_RGB, GL_UNSIGNED_BYTE, frame_rgb)
 
     return textura_id
-
-def DesenhaVideo(arquivo_video, x, y, largura, altura):
-    
-    # Carrega o vídeo usando OpenCV
-    video = cv2.VideoCapture(arquivo_video)
-
-    # Verifica se o vídeo foi carregado corretamente
-    if not video.isOpened():
-        print("Erro ao abrir o vídeo.")
-        return
-
-    fps = video.get(cv2.CAP_PROP_FPS)  # Obtém a taxa de quadros
-    wait_time = int(1000 / fps)  # Tempo em milissegundos entre frames
-
-    while True:
-        ret, frame = video.read()  # Lê um frame do vídeo
-        if not ret:
-            print("Fim do vídeo ou erro ao ler o frame.")
-            break  # Sai do loop se o vídeo terminar
-
-        # NÃO limpe o buffer de cor para não apagar o cenário!
-        # Limpe apenas o buffer de profundidade se necessário
-        glClear(GL_DEPTH_BUFFER_BIT)
-
-        textura_id = CarregaTexturaDoFrame(frame)
-
-        # Verifica se a textura foi carregada corretamente
-        if textura_id == 0:
-            print("Erro ao criar textura.")
-            break
-
-        # Desenhar um quadrilátero com a textura do frame
-        glEnable(GL_TEXTURE_2D)
-        glBindTexture(GL_TEXTURE_2D, textura_id)
-
-        glPushMatrix()  # Salva a matriz de transformação atual
-
-        # Define a posição do quadrilátero na tela
-        glTranslatef(x, y, 0)  # Certifique-se de usar uma profundidade adequada
-
-        # Desenha o quadrilátero com a textura do frame do vídeo
-        glBegin(GL_QUADS)
-        glTexCoord2f(0.0, 0.0); glVertex2f(0, 0)  # Inferior esquerdo
-        glTexCoord2f(1.0, 0.0); glVertex2f(largura, 0)  # Inferior direito
-        glTexCoord2f(1.0, 1.0); glVertex2f(largura, altura)  # Superior direito
-        glTexCoord2f(0.0, 1.0); glVertex2f(0, altura)  # Superior esquerdo
-        glEnd()
-
-        glPopMatrix()  # Restaura a matriz de transformação anterior
-
-        # Exibe o frame na janela
-        glutSwapBuffers()
-
-        # Libera a textura para o próximo frame
-        glDeleteTextures([textura_id])
-
-        # Controle de velocidade do vídeo (depende do framerate)
-        cv2.waitKey(wait_time)
-
-    video.release()  # Libera o vídeo após terminar
 
 # Função para desenhar um objeto com shader e textura (se fornecida)
 def obj_draw_shaderTexture(objeto, shader_program, texture_ID=None):
@@ -426,6 +412,7 @@ def play_music(music_path, channel, volume):
     sound_channel.play(sound, loops=0)
     # seta o volume 
     sound_channel.set_volume(volume)
+
 # Função para redimensionar a tela
 def resize(w, h):
     glViewport(0, 0, w, h) # Define a área de visualização
@@ -435,6 +422,7 @@ def resize(w, h):
     glMatrixMode(GL_MODELVIEW) # Define a matriz de visualização 
     glLoadIdentity() # Carrega a matriz identidade
 
+# Função para tratar eventos de teclado
 def Keys(key, x, y):
 
     global T
@@ -471,7 +459,8 @@ def Keys(key, x, y):
         camy -= 1
     elif (key == b'o'):
         camy += 1
-    
+
+# Função para tratar eventos de teclado especiais
 def KeysEspecial(key, x, y):
     global L
     global L2
@@ -496,9 +485,6 @@ VelocidadeX = .25
 def animacao(value):
     glutPostRedisplay()
     glutTimerFunc(30, animacao,1)
-
-    #colisao do chao
-    # chao tem tamanho = 30
 
     global T, T2, T3, pulo
     global posChaoX, posCubeY, posCubeX, posCubeX2, posCubeY2
@@ -578,13 +564,14 @@ def animacao(value):
     
 
     # animando o inimigo
-    global Fx, Fy, Fz, VelocidadeX
-    # mantem o movimento em um intervalo 
-    if Fx >32:
-        VelocidadeX = -VelocidadeX
-    elif Fx < 17:
-        VelocidadeX = -VelocidadeX
-    Fx += VelocidadeX
+    global Fx, Fy, Fz, VelocidadeX, CtrlFreeddy
+    if CtrlFreeddy == True:
+        # mantem o movimento em um intervalo 
+        if Fx >32:
+            VelocidadeX = -VelocidadeX
+        elif Fx < 17:
+            VelocidadeX = -VelocidadeX
+        Fx += VelocidadeX
 
     #implementa gravidade
     if T2 > -3:
@@ -711,13 +698,6 @@ def init():
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     
-
-
-
-
-
-
-
 glutInit()
 glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB)
 glutInitWindowSize(1920, 1080)
@@ -738,7 +718,7 @@ Freddy = pywavefront.Wavefront("objetos/Freddy.obj")
 fundo = pywavefront.Wavefront("objetos/fundo.obj")
 
 # inicia a mudica de fundo
-play_music("media/Super Mario Bros. Soundtrack.mp3", 0, 1)
+play_music("media/Super Mario Bros. Soundtrack.mp3", 0, 3)
 
 glutDisplayFunc(display)
 glutReshapeFunc(resize)
